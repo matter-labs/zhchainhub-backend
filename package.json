@@ -5,6 +5,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "prepare": "husky",
     "test": "turbo run test",
     "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
@@ -14,10 +15,18 @@
     "tooling/*"
   ],
   "devDependencies": {
+    "@commitlint/config-conventional": "19.2.2",
     "@hyperhub/test-config": "workspace:*",
     "@hyperhub/typescript-config": "workspace:*",
+    "commitlint": "19.3.0",
+    "husky": "9.0.11",
+    "lint-staged": "15.2.4",
     "prettier": "3.2.5",
-    "turbo": "latest"
+    "turbo": "1.13.3"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx}": "eslint --cache --fix",
+    "**/*.{md,json,yml,yaml}": "prettier --write"
   },
   "packageManager": "yarn@4.2.2"
 }

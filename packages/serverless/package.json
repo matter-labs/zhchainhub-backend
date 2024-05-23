@@ -8,13 +8,11 @@
     "test": "vitest run --dir src",
     "tsc": "tsc --noEmit"
   },
-  "dependencies": {
-  },
   "devDependencies": {
+    "@hyperhub/typescript-config": "workspace:*",
     "@serverless/typescript": "3.27.0",
     "@types/aws-lambda": "8.10.71",
     "@types/node": "18.13.0",
-    "@hyperhub/typescript-config": "workspace:*",
     "esbuild": "0.16.0",
     "serverless": "3.27.0",
     "serverless-esbuild": "1.37.3",

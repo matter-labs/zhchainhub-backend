@@ -5,6 +5,8 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "workspaces": [
@@ -12,6 +14,7 @@
     "tooling/*"
   ],
   "devDependencies": {
+    "@hyperhub/test-config": "workspace:*",
     "@hyperhub/typescript-config": "workspace:*",
     "prettier": "3.2.5",
     "turbo": "latest"

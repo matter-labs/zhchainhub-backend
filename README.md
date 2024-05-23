@@ -1,17 +1,63 @@
 # Hyperhub
 
-Developed with [Turborepo](https://turbo.build/)
+## Description
 
-### Apps and Packages
+The Hyperhub project for zkSync involves the creation of a comprehensive data management system. This project is designed to provide key insights into the zkSync network, making it an invaluable tool for users and developers.
+
+## Packages
 
 - `@hyperhub/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- `@hyperhub/serverless`: Includes all serverless functions from the repository.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+## Dev Environment
 
-### Build
-
-To build all apps and packages, run the following command:
+Installing and building packages can be done through the following command:
 
 ```
-yarn build
+yarn && yarn build
+```
+
+Here `yarn`: Install deps, create symlinks, hoist packages.
+And `yarn build` Build all packages.
+
+Address changes for each package can be done the following way:
+
+```
+yarn workspace @hyperhub/serverless dev
+```
+
+## Running tests
+
+To test for the complete repository run:
+
+```
+yarn build && yarn test
+```
+
+For testing individual packages:
+
+```
+yarn workspace @huperhub/serverless build
+yarn workspace @hyperhub/serverless test
+```
+
+## Creating a new package
+
+<!-- //TODO: add a boilerplate tool -->
+
+Creating a new package can be replicated from already existing packages structure.
+
+## Installing dependencies
+
+For global dependencies:
+
+```
+yarn add ethers
+```
+
+Adding new dependencies should be done from root level, and not from each package.
+For example:
+
+```
+yarn workspace @hyperhub/serverless add ethers
 ```

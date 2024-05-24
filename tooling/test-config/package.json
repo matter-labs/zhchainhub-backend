@@ -13,7 +13,6 @@
   "devDependencies": {
     "@hyperhub/typescript-config": "workspace:*",
     "@vitest/coverage-v8": "1.6.0",
-    "typescript": "5.4.5",
     "vitest": "1.6.0"
   }
 }

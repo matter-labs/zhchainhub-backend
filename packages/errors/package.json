@@ -1,0 +1,17 @@
+{
+  "name": "@hyperhub/errors",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@hyperhub/test-config": "workspace:*",
+    "@hyperhub/typescript-config": "workspace:*"
+  }
+}

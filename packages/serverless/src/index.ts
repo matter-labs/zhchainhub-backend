@@ -1,1 +1,3 @@
-export { example } from './handlers/exampleHandler';
+export const buildHandler = () => {
+  console.log('@@//TODO');
+};

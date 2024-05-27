@@ -10,6 +10,7 @@
     "tsc": "tsc --noEmit"
   },
   "devDependencies": {
+    "@hyperhub/errors": "workspace:*",
     "@hyperhub/typescript-config": "workspace:*",
     "@serverless/typescript": "3.27.0",
     "@types/aws-lambda": "8.10.71",

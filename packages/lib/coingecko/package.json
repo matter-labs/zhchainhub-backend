@@ -1,5 +1,5 @@
 {
-  "name": "@hyperhub/coingecko",
+  "name": "@zkChainHub/coingecko",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -10,8 +10,8 @@
     "tsc": "tsc --noEmit"
   },
   "devDependencies": {
-    "@hyperhub/errors": "workspace:*",
-    "@hyperhub/test-config": "workspace:*",
-    "@hyperhub/typescript-config": "workspace:*"
+    "@zkChainHub/errors": "workspace:*",
+    "@zkChainHub/test-config": "workspace:*",
+    "@zkChainHub/typescript-config": "workspace:*"
   }
 }

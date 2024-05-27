@@ -1,5 +1,5 @@
 {
-  "name": "@hyperhub/errors",
+  "name": "@zkChainHub/errors",
   "version": "0.0.0",
   "private": true,
   "license": "MIT",
@@ -11,7 +11,7 @@
     "access": "public"
   },
   "devDependencies": {
-    "@hyperhub/test-config": "workspace:*",
-    "@hyperhub/typescript-config": "workspace:*"
+    "@zkChainHub/test-config": "workspace:*",
+    "@zkChainHub/typescript-config": "workspace:*"
   }
 }

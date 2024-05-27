@@ -1,5 +1,5 @@
 {
-  "name": "@hyperhub/serverless",
+  "name": "@zkChainHub/serverless",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -10,10 +10,10 @@
     "tsc": "tsc --noEmit"
   },
   "devDependencies": {
-    "@hyperhub/errors": "workspace:*",
-    "@hyperhub/typescript-config": "workspace:*",
     "@serverless/typescript": "3.27.0",
     "@types/aws-lambda": "8.10.71",
+    "@zkChainHub/errors": "workspace:*",
+    "@zkChainHub/typescript-config": "workspace:*",
     "esbuild": "0.16.0",
     "serverless": "3.27.0",
     "serverless-esbuild": "1.37.3",

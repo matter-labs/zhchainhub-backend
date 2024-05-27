@@ -1,5 +1,5 @@
 {
-  "name": "hyperhub",
+  "name": "zkChainHub",
   "private": true,
   "scripts": {
     "build": "turbo build",
@@ -16,9 +16,9 @@
   ],
   "devDependencies": {
     "@commitlint/config-conventional": "19.2.2",
-    "@hyperhub/test-config": "workspace:*",
-    "@hyperhub/typescript-config": "workspace:*",
     "@types/node": "18.13.0",
+    "@zkChainHub/test-config": "workspace:*",
+    "@zkChainHub/typescript-config": "workspace:*",
     "commitlint": "19.3.0",
     "husky": "9.0.11",
     "lint-staged": "15.2.4",

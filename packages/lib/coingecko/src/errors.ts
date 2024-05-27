@@ -1,4 +1,4 @@
-import { BaseError } from "@hyperhub/errors";
+import { BaseError } from "@zkChainHub/errors";
 
 export class CoingeckoError extends BaseError {
   constructor(description: string) {

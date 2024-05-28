@@ -1,7 +1,7 @@
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect } from "vitest";
 
-describe('exampleHandler', () => {
-  test('Sample exampleHandler test', () => {
+describe("exampleHandler", () => {
+  test("Sample exampleHandler test", () => {
     expect(true).toBe(true);
-  })
+  });
 });

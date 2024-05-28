@@ -17,6 +17,8 @@
   "devDependencies": {
     "@commitlint/config-conventional": "19.2.2",
     "@types/node": "18.13.0",
+    "@zkChainHub/eslint-config": "workspace:*",
+    "@zkChainHub/prettier-config": "workspace:*",
     "@zkChainHub/test-config": "workspace:*",
     "@zkChainHub/typescript-config": "workspace:*",
     "commitlint": "19.3.0",

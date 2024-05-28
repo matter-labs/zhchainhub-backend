@@ -1,0 +1,18 @@
+{
+  "name": "@zkChainHub/prettier-config",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "license": "MIT",
+  "scripts": {
+    "format": "prettier --check . --ignore-path ../../.gitignore"
+  },
+  "devDependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
+    "prettier": "^3.2.4"
+  },
+  "prettier": "@zkChainHub/prettier-config"
+}

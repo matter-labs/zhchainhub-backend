@@ -30,7 +30,7 @@ jobs:
         run: yarn --immutable
 
       - name: Run Prettier
-        run: yarn prettier
+        run: yarn format
 
       - name: Run Linter
         run: yarn lint

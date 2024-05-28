@@ -16,7 +16,7 @@ Installing and building packages can be done through the following command:
 ```
 yarn && yarn build
 ```
- 
+
 Here `yarn`: Install deps, create symlinks, hoist packages.
 And `yarn build` Build all packages.
 

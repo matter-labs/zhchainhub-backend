@@ -1,11 +1,9 @@
 {
-  "extends": "@zkChainHub/typescript-config/base.json",
-  "include": ["./src/**/*.ts"],
-  "exclude": ["dist", "node_modules"],
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "declaration": true,
-    "declarationMap": true
-  }
+    "extends": "@total-typescript/tsconfig/tsc/no-dom/library-monorepo",
+    "compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./dist"
+    },
+    "include": ["./src/**/*.ts"],
+    "exclude": ["dist", "node_modules"]
 }

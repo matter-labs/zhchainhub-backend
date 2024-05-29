@@ -2,7 +2,7 @@
 /** @typedef {import("@ianvs/prettier-plugin-sort-imports").PluginConfig} SortImportsConfig */
 
 /** @type { PrettierConfig | SortImportsConfig | TailwindConfig } */
-const config = {
+module.exports = {
     arrowParens: "always",
     printWidth: 100,
     singleQuote: false,
@@ -14,8 +14,8 @@ const config = {
         "<TYPES>",
         "<THIRD_PARTY_MODULES>",
         "",
-        "<TYPES>^@zkChainHub",
-        "^@zkChainHub/(.*)$",
+        "<TYPES>^@zkchainhub",
+        "^@zkchainhub/(.*)$",
         "",
         "<TYPES>^[.|..|~]",
         "^~/",
@@ -23,7 +23,5 @@ const config = {
         "^[./]",
     ],
     importOrderParserPlugins: ["typescript", "decorators-legacy"],
-    importOrderTypeScriptVersion: "4.4.0",
+    importOrderTypeScriptVersion: "5.4.5",
 };
-
-export default config;

@@ -1,9 +1,9 @@
 {
-  "extends": "@zkChainHub/typescript-config/base.json",
-  "include": ["./src"],
-  "exclude": ["node_modules", "__test__/"],
-  "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "./dist"
-  }
+    "extends": "@total-typescript/tsconfig/tsc/no-dom/app",
+    "include": ["./src"],
+    "exclude": ["node_modules", "__test__/"],
+    "compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./dist"
+    }
 }

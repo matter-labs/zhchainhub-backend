@@ -1,37 +1,37 @@
 {
-  "name": "zkChainHub",
-  "private": true,
-  "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev",
-    "lint": "turbo lint",
-    "prepare": "husky",
-    "test": "turbo run test",
-    "test:watch": "turbo run test:watch",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
-  },
-  "workspaces": [
-    "packages/**",
-    "tooling/**"
-  ],
-  "devDependencies": {
-    "@commitlint/config-conventional": "19.2.2",
-    "@types/node": "18.13.0",
-    "@zkChainHub/eslint-config": "workspace:*",
-    "@zkChainHub/prettier-config": "workspace:*",
-    "@zkChainHub/test-config": "workspace:*",
-    "@zkChainHub/typescript-config": "workspace:*",
-    "commitlint": "19.3.0",
-    "husky": "9.0.11",
-    "lint-staged": "15.2.4",
-    "prettier": "3.2.5",
-    "ts-node-dev": "2.0.0",
-    "turbo": "1.13.3",
-    "typescript": "4.9.4"
-  },
-  "lint-staged": {
-    "**/*.{js,jsx,ts,tsx}": "eslint --cache --fix",
-    "**/*.{md,json,yml,yaml}": "prettier --write"
-  },
-  "packageManager": "yarn@4.2.2"
+    "name": "zkchainhub",
+    "private": true,
+    "scripts": {
+        "build": "turbo build",
+        "dev": "turbo dev",
+        "lint": "turbo lint",
+        "prepare": "husky",
+        "test": "turbo test",
+        "format": "prettier --write \"**/*.{js,ts,md,json,yml,yaml}\"",
+        "clean": "rimraf **/*.tsbuildinfo & rimraf **/dist & rimraf **/.turbo & rimraf **/.cache & rimraf **/node_modules "
+    },
+    "workspaces": [
+        "packages/**",
+        "tooling/**"
+    ],
+    "devDependencies": {
+        "@commitlint/config-conventional": "19.2.2",
+        "@total-typescript/tsconfig": "1.0.4",
+        "@types/node": "18.13.0",
+        "@zkchainhub/eslint-config": "workspace:*",
+        "@zkchainhub/prettier-config": "workspace:*",
+        "@zkchainhub/test-config": "workspace:*",
+        "commitlint": "19.3.0",
+        "eslint": "8.56.0",
+        "husky": "9.0.11",
+        "lint-staged": "13.2.3",
+        "prettier": "3.2.5",
+        "rimraf": "5.0.7",
+        "ts-node-dev": "2.0.0",
+        "turbo": "1.13.3",
+        "typescript": "5.4.5",
+        "vitest": "1.6.0"
+    },
+    "packageManager": "yarn@4.2.2",
+    "prettier": "@zkchainhub/prettier-config"
 }

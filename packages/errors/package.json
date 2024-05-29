@@ -1,20 +1,24 @@
 {
-  "name": "@zkChainHub/errors",
-  "version": "0.0.0",
-  "private": true,
-  "license": "MIT",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "lint": "eslint --fix . --max-warnings 0"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "devDependencies": {
-    "@zkChainHub/eslint-config": "workspace:*",
-    "@zkChainHub/test-config": "workspace:*",
-    "@zkChainHub/typescript-config": "workspace:*",
-    "eslint": "9.3.0"
-  }
+    "name": "@zkchainhub/errors",
+    "version": "0.0.0",
+    "private": true,
+    "license": "MIT",
+    "type": "module",
+    "types": "./dist/index.d.ts",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "scripts": {
+        "test": "vitest",
+        "build": "tsc -p tsconfig.json",
+        "lint": "eslint --fix . --max-warnings 0"
+    },
+    "publishConfig": {
+        "access": "public"
+    },
+    "devDependencies": {
+        "@zkchainhub/eslint-config": "workspace:*",
+        "@zkchainhub/test-config": "workspace:*",
+        "eslint": "8.56.0",
+        "vitest": "1.6.0"
+    }
 }

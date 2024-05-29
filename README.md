@@ -6,8 +6,7 @@ The zkChainHub project for zkSync involves the creation of a comprehensive data 
 
 ## Packages
 
-- `@zkChainHub/typescript-config`: `tsconfig.json`s used throughout the monorepo
-- `@zkChainHub/serverless`: Includes all serverless functions from the repository.
+-   `@zkchainhub/serverless`: Includes all serverless functions from the repository.
 
 ## Dev Environment
 
@@ -23,7 +22,7 @@ And `yarn build` Build all packages.
 Address changes for each package can be done the following way:
 
 ```
-yarn workspace @zkChainHub/serverless dev
+yarn workspace @zkchainhub/serverless dev
 ```
 
 ## Running tests
@@ -38,7 +37,7 @@ For testing individual packages:
 
 ```
 yarn workspace @huperhub/serverless build
-yarn workspace @zkChainHub/serverless test
+yarn workspace @zkchainhub/serverless test
 ```
 
 ## Creating a new package
@@ -59,5 +58,5 @@ Adding new dependencies should be done from root level, and not from each packag
 For example:
 
 ```
-yarn workspace @zkChainHub/serverless add ethers
+yarn workspace @zkchainhub/serverless add ethers
 ```

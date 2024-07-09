@@ -1,9 +1,0 @@
-{
-    "extends": "@total-typescript/tsconfig/tsc/no-dom/app",
-    "include": ["./src/**/*.ts"],
-    "exclude": ["dist", "node_modules"],
-    "compilerOptions": {
-        "rootDir": "./src",
-        "outDir": "./dist"
-    }
-}

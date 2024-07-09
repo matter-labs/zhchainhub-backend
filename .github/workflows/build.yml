@@ -10,18 +10,23 @@ jobs:
 
         steps:
             - name: Check out github repository
-              uses: actions/checkout@v3
+              uses: actions/checkout@v4
               with:
                   fetch-depth: 1
+                  
+            - name: Use PNPM
+              uses: pnpm/action-setup@v4
+              with:
+                  run_install: false
 
             - name: Use Node.js
-              uses: actions/setup-node@v3
+              uses: actions/setup-node@v4
               with:
-                  node-version: 18.x
-                  cache: "yarn"
+                  node-version: 20
+                  cache: "pnpm"
 
             - name: Install dependencies
-              run: yarn --immutable
+              run: pnpm install
 
             - name: Run Build
-              run: yarn build
+              run: pnpm build

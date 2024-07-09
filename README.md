@@ -2,61 +2,69 @@
 
 ## Description
 
-The zkChainHub project for zkSync involves the creation of a comprehensive data management system. This project is designed to provide key insights into the zkSync network, making it an invaluable tool for users and developers.
+ZKchainHub is envisioned as a permissionless, cloud-agnostic platform that allows anyone to deploy an instance, specifically focusing on the settlement chain.
 
-## Packages
+## 📋 Prerequisites
 
--   `@zkchainhub/serverless`: Includes all serverless functions from the repository.
+- Ensure you have `node >= 20.0.0` and `pnpm >= 9.0.0` installed.
 
-## Dev Environment
 
-Installing and building packages can be done through the following command:
-
-```
-yarn && yarn build
-```
-
-Here `yarn`: Install deps, create symlinks, hoist packages.
-And `yarn build` Build all packages.
-
-Address changes for each package can be done the following way:
-
-```
-yarn workspace @zkchainhub/serverless dev
+## Diagram
+This is a high level architecture diagram of the zkChainhub
+```mermaid
+graph LR
+    API -->|Ethereum RPC| ETH_RPC[Ethereum RPC]
+    API -.->|L2 RPC| L2_RPC[L2 RPC]
+    style API fill:#2E86C1,stroke:#ffffff,stroke-width:2px
+    style ETH_RPC fill:#2E86C1,stroke:#ffffff,stroke-width:2px
+    style L2_RPC fill:#2E86C1,stroke:#ffffff,stroke-width:2px
 ```
 
-## Running tests
 
-To test for the complete repository run:
+## Installation
 
-```
-yarn build && yarn test
-```
-
-For testing individual packages:
-
-```
-yarn workspace @huperhub/serverless build
-yarn workspace @zkchainhub/serverless test
+```bash
+$ pnpm install
 ```
 
-## Creating a new package
+## Running the app
 
-<!-- //TODO: add a boilerplate tool -->
+```bash
+# development
+$ pnpm run start
 
-Creating a new package can be replicated from already existing packages structure.
+# watch mode
+$ pnpm run start:dev
 
-## Installing dependencies
+# production mode
+$ pnpm run start:prod
 
-For global dependencies:
-
+# running a specific app
+$ pnpm run start my-app
 ```
-yarn add ethers
+
+## Test
+
+```bash
+# unit tests
+$ pnpm run test
+
+# e2e tests
+$ pnpm run test:e2e
+
+# test coverage
+$ pnpm run test:cov
 ```
 
-Adding new dependencies should be done from root level, and not from each package.
-For example:
+## Creating a new app
+```bash
+$ pnpm nest g app my-app
+```
 
+## Creating a new library
+```bash
+$ pnpm nest g library my-library
 ```
-yarn workspace @zkchainhub/serverless add ethers
-```
+
+## 💻 Conventional Commits
+We follow the Conventional Commits [specification](https://www.conventionalcommits.org/en/v1.0.0/#specification).

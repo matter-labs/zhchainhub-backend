@@ -1,0 +1,12 @@
+{
+    "solidity.compileUsingRemoteVersion": "v0.8.0+commit.c7dfd78e",
+    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+    "eslint.probe": ["typescript"],
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.formatDocument": "explicit",
+        "source.fixAll.eslint": "explicit"
+    },
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "javascript.preferences.importModuleSpecifier": "non-relative"
+}

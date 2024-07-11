@@ -30,6 +30,7 @@
     },
     "devDependencies": {
         "@commitlint/config-conventional": "19.2.2",
+        "@golevelup/ts-jest": "0.5.0",
         "@ianvs/prettier-plugin-sort-imports": "4.3.0",
         "@nestjs/cli": "10.0.0",
         "@nestjs/schematics": "10.0.0",
@@ -72,6 +73,12 @@
             "**/*.(t|j)s"
         ],
         "coverageDirectory": "./coverage",
+        "coveragePathIgnorePatterns": [
+            "/node_modules/",
+            ".e2e-spec.ts",
+            ".module.ts",
+            "main.ts"
+        ],
         "testEnvironment": "node",
         "roots": [
             "<rootDir>/apps/",

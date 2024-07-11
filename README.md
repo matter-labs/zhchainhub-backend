@@ -3,6 +3,7 @@
 ## Description
 
 ZKchainHub is envisioned as a permissionless, cloud-agnostic platform that allows anyone to deploy an instance, specifically focusing on the settlement chain.
+You can fetch metrics from the ZKsync ecosystem and ZK chains from L1 RPC (Ethereum). Optionally, it will also fetch data from L2 RPCs for the chains where the user provides the RPC.
 
 ## 📋 Prerequisites
 
@@ -10,7 +11,7 @@ ZKchainHub is envisioned as a permissionless, cloud-agnostic platform that allow
 
 
 ## Diagram
-This is a high level architecture diagram of the zkChainhub
+This is a high level architecture diagram of the ZKchainHub
 ```mermaid
 graph LR
     API -->|Ethereum RPC| ETH_RPC[Ethereum RPC]

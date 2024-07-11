@@ -7,7 +7,7 @@
     "license": "UNLICENSED",
     "scripts": {
         "build": "nest build",
-        "format": "prettier --write \"apps/**/*.ts\"",
+        "format": "prettier --write \"{apps,libs}/**/*.ts\"",
         "start": "nest start",
         "start:dev": "nest start --watch",
         "start:debug": "nest start --debug --watch",
@@ -74,8 +74,12 @@
         "coverageDirectory": "./coverage",
         "testEnvironment": "node",
         "roots": [
-            "<rootDir>/apps/"
-        ]
+            "<rootDir>/apps/",
+            "<rootDir>/libs/"
+        ],
+        "moduleNameMapper": {
+            "^@packages/providers(|/.*)$": "<rootDir>/libs/providers/src/$1"
+        }
     },
     "packageManager": "pnpm@9.5.0+sha1.8c155dc114e1689d18937974f6571e0ceee66f1d",
     "lint-staged": {

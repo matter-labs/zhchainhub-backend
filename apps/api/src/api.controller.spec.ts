@@ -1,7 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { EvmProviderService } from "@packages/providers";
 
 import { ApiController } from "./api.controller";
-import { ApiService } from "./api.service";
 
 describe("ApiController", () => {
     let apiController: ApiController;
@@ -9,15 +9,15 @@ describe("ApiController", () => {
     beforeEach(async () => {
         const app: TestingModule = await Test.createTestingModule({
             controllers: [ApiController],
-            providers: [ApiService],
+            providers: [EvmProviderService],
         }).compile();
 
         apiController = app.get<ApiController>(ApiController);
     });
 
     describe("root", () => {
-        it('should return "Hello World!"', () => {
-            expect(apiController.getHello()).toBe("Hello World!");
+        it("should return 1", async () => {
+            expect(await apiController.getTvl()).toBe(1);
         });
     });
 });

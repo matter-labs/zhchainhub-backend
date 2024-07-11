@@ -1,13 +1,12 @@
 import { Controller, Get } from "@nestjs/common";
-
-import { ApiService } from "./api.service";
+import { EvmProviderService } from "@packages/providers";
 
 @Controller()
 export class ApiController {
-    constructor(private readonly apiService: ApiService) {}
+    constructor(private readonly evmProvider: EvmProviderService) {}
 
     @Get()
-    getHello(): string {
-        return this.apiService.getHello();
+    getTvl() {
+        return this.evmProvider.getTvl();
     }
 }

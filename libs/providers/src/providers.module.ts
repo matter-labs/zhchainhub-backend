@@ -2,6 +2,10 @@ import { Module } from "@nestjs/common";
 
 import { EvmProviderService } from "./evmProvider.service";
 
+/**
+ * Module for managing provider services.
+ * This module exports Services for interacting with EVM-based blockchains.
+ */
 @Module({
     providers: [EvmProviderService],
     exports: [EvmProviderService],

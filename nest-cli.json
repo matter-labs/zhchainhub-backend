@@ -5,7 +5,16 @@
     "compilerOptions": {
         "deleteOutDir": true,
         "webpack": true,
-        "tsConfigPath": "apps/api/tsconfig.app.json"
+        "tsConfigPath": "apps/api/tsconfig.app.json",
+        "plugins": [
+            {
+                "name": "@nestjs/swagger",
+                "options": {
+                    "classValidatorShim": false,
+                    "introspectComments": true
+                }
+            }
+        ]
     },
     "monorepo": true,
     "root": "apps/api",
@@ -16,16 +25,7 @@
             "entryFile": "main",
             "sourceRoot": "apps/api/src",
             "compilerOptions": {
-                "tsConfigPath": "apps/api/tsconfig.app.json",
-                "plugins": [
-                    {
-                        "name": "@nestjs/swagger",
-                        "options": {
-                            "classValidatorShim": false,
-                            "introspectComments": true
-                        }
-                    }
-                ]
+                "tsConfigPath": "apps/api/tsconfig.app.json"
             }
         },
         "providers": {
@@ -35,6 +35,15 @@
             "sourceRoot": "libs/providers/src",
             "compilerOptions": {
                 "tsConfigPath": "libs/providers/tsconfig.lib.json"
+            }
+        },
+        "dtos": {
+            "type": "library",
+            "root": "libs/dtos",
+            "entryFile": "index",
+            "sourceRoot": "libs/dtos/src",
+            "compilerOptions": {
+                "tsConfigPath": "libs/dtos/tsconfig.lib.json"
             }
         }
     }

@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 
-import { EvmProviderService } from "./evmProvider.service";
+import { EvmProviderService } from "./providers";
 
 /**
  * Module for managing provider services.

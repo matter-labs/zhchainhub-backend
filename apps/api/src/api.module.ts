@@ -1,7 +1,5 @@
 import { MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import { ProvidersModule } from "@packages/providers";
 
-import { ApiController } from "./api.controller";
 import { RequestLoggerMiddleware } from "./common/middleware/request.middleware";
 import { MetricsController } from "./metrics/metrics.controller";
 
@@ -10,8 +8,8 @@ import { MetricsController } from "./metrics/metrics.controller";
  * Here we import all required modules and register the controllers for the ZKchainHub API.
  */
 @Module({
-    imports: [ProvidersModule],
-    controllers: [ApiController, MetricsController],
+    imports: [],
+    controllers: [MetricsController],
     providers: [],
 })
 export class ApiModule implements NestModule {

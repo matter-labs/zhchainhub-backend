@@ -8,6 +8,7 @@ import {
     ContractFunctionName,
     ContractFunctionReturnType,
     createPublicClient,
+    GetBlockReturnType,
     Hex,
     http,
     HttpTransport,
@@ -46,6 +47,14 @@ export class EvmProviderService {
      */
     async getBlockNumber(): Promise<bigint> {
         return this.client.getBlockNumber();
+    }
+
+    /**
+     * Retrieves the current block number.
+     * @returns {Promise<GetBlockReturnType>} Latest block number.
+     */
+    async getBlockByNumber(blockNumber: number): Promise<GetBlockReturnType> {
+        return this.client.getBlock({ blockNumber: BigInt(blockNumber) });
     }
 
     /**

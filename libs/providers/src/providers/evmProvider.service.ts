@@ -1,13 +1,19 @@
 import { Injectable } from "@nestjs/common";
-import { InvalidArgumentException } from "@packages/providers/exceptions";
+import { DataDecodeException, InvalidArgumentException } from "@packages/providers/exceptions";
+import { AbiWithConstructor } from "@packages/providers/types";
+import { AbiParameter } from "abitype";
 import {
     Abi,
     Address,
     Chain,
+    ContractConstructorArgs,
     ContractFunctionArgs,
     ContractFunctionName,
     ContractFunctionReturnType,
     createPublicClient,
+    decodeAbiParameters,
+    DecodeAbiParametersReturnType,
+    encodeDeployData,
     GetBlockReturnType,
     Hex,
     http,
@@ -116,5 +122,38 @@ export class EvmProviderService {
             functionName,
             args,
         });
+    }
+
+    /**
+     * Executes a batch request to deploy a contract and returns the decoded constructor return parameters.
+     * @param {AbiWithConstructor} abi - The ABI (Application Binary Interface) of the contract. Must contain a constructor.
+     * @param {Hex} bytecode - The bytecode of the contract.
+     * @param {ContractConstructorArgs<typeof abi>} args - The constructor arguments for the contract.
+     * @param constructorReturnParams - The return parameters of the contract's constructor.
+     * @returns The decoded constructor return parameters.
+     * @throws {DataDecodeException} if there is no return data or if the return data does not match the expected type.
+     */
+    async batchRequest<ReturnType extends readonly AbiParameter[]>(
+        abi: AbiWithConstructor,
+        bytecode: Hex,
+        args: ContractConstructorArgs<typeof abi>,
+        constructorReturnParams: ReturnType,
+    ): Promise<DecodeAbiParametersReturnType<ReturnType>> {
+        const deploymentData = args ? encodeDeployData({ abi, bytecode, args }) : bytecode;
+
+        const { data: returnData } = await this.client.call({
+            data: deploymentData,
+        });
+
+        if (!returnData) {
+            throw new DataDecodeException("No return data");
+        }
+
+        try {
+            const decoded = decodeAbiParameters(constructorReturnParams, returnData);
+            return decoded;
+        } catch (e) {
+            throw new DataDecodeException("Error decoding return data with given AbiParameters");
+        }
     }
 }

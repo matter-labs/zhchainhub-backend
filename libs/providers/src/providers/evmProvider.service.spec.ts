@@ -1,5 +1,10 @@
 import { createMock } from "@golevelup/ts-jest";
 import { Test, TestingModule } from "@nestjs/testing";
+import { DataDecodeException } from "@packages/providers/exceptions";
+import {
+    arrayAbiFixture,
+    structAbiFixture,
+} from "@packages/providers/fixtures/batchRequest.fixture";
 import { parseAbi } from "abitype";
 import * as viem from "viem";
 import { localhost } from "viem/chains";
@@ -17,6 +22,7 @@ jest.mock("viem", () => ({
 describe("EvmProviderService", () => {
     let viemProvider: EvmProviderService;
     const testAbi = parseAbi([
+        "constructor(uint256 totalSupply)",
         "function balanceOf(address owner) view returns (uint256)",
         "function tokenURI(uint256 tokenId) pure returns (string)",
     ]);
@@ -40,6 +46,7 @@ describe("EvmProviderService", () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+        jest.resetModules();
     });
 
     describe("getBalance", () => {
@@ -145,6 +152,108 @@ describe("EvmProviderService", () => {
                 functionName,
                 args,
             });
+        });
+    });
+
+    describe("batchRequest", () => {
+        it("should properly encode bytecode data and decode return data from batch request call", async () => {
+            const returnAbiParams = viem.parseAbiParameters([
+                "TokenData[] returnData",
+                "struct TokenData { uint8 tokenDecimals; string tokenSymbol; string tokenName; }",
+            ]);
+            jest.spyOn(mockClient, "call").mockResolvedValue({ data: structAbiFixture.returnData });
+
+            const [returnValue] = await viemProvider.batchRequest(
+                structAbiFixture.abi,
+                structAbiFixture.bytecode,
+                structAbiFixture.args,
+                returnAbiParams,
+            );
+
+            expect(returnValue).toStrictEqual([
+                {
+                    tokenDecimals: 18,
+                    tokenSymbol: "WETH",
+                    tokenName: "Wrapped Ether",
+                },
+                {
+                    tokenDecimals: 6,
+                    tokenSymbol: "USDC",
+                    tokenName: "USD Coin",
+                },
+            ]);
+        });
+
+        it("should fail if no data is returned", async () => {
+            const returnAbiParams = viem.parseAbiParameters([
+                "TokenData[] returnData",
+                "struct TokenData { uint8 tokenDecimals; string tokenSymbol; string tokenName; }",
+            ]);
+
+            jest.spyOn(mockClient, "call").mockResolvedValue({ data: undefined });
+
+            await expect(
+                viemProvider.batchRequest(
+                    structAbiFixture.abi,
+                    structAbiFixture.bytecode,
+                    structAbiFixture.args,
+                    returnAbiParams,
+                ),
+            ).rejects.toThrowError(DataDecodeException);
+        });
+
+        it("should fail if decoded data does not match validator (missing struct fields)", async () => {
+            // this schema is incorrect, it should have 3 fields instead of 2
+            const returnAbiParams = viem.parseAbiParameters([
+                "WrongTokenData[] returnData",
+                "struct WrongTokenData { string tokenSymbol; string tokenName; }",
+            ]);
+
+            jest.spyOn(mockClient, "call").mockResolvedValue({ data: structAbiFixture.returnData });
+
+            await expect(
+                viemProvider.batchRequest(
+                    structAbiFixture.abi,
+                    structAbiFixture.bytecode,
+                    structAbiFixture.args,
+                    returnAbiParams,
+                ),
+            ).rejects.toThrowError(
+                new DataDecodeException("Error decoding return data with given AbiParameters"),
+            );
+        });
+
+        it("should fail if decoded data does not match validator (not struct vs struct)", async () => {
+            // this schema is incorrect, it should have 3 fields instead of 2
+            const returnAbiParams = viem.parseAbiParameters("uint8 decimals, address[] owners");
+
+            jest.spyOn(mockClient, "call").mockResolvedValue({ data: structAbiFixture.returnData });
+
+            await expect(
+                viemProvider.batchRequest(
+                    structAbiFixture.abi,
+                    structAbiFixture.bytecode,
+                    structAbiFixture.args,
+                    returnAbiParams,
+                ),
+            ).rejects.toThrowError(
+                new DataDecodeException("Error decoding return data with given AbiParameters"),
+            );
+        });
+
+        it("should properly decode address[]", async () => {
+            const returnAbiParams = viem.parseAbiParameters("address[]");
+
+            jest.spyOn(mockClient, "call").mockResolvedValue({ data: arrayAbiFixture.returnData });
+
+            const [returnValue] = await viemProvider.batchRequest(
+                arrayAbiFixture.abi,
+                arrayAbiFixture.bytecode,
+                arrayAbiFixture.args,
+                returnAbiParams,
+            );
+
+            expect(returnValue).toEqual(arrayAbiFixture.args[0]);
         });
     });
 });

@@ -1,6 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { AssetDistribution, BatchesInfo, FeeParams, L2ChainInfo, Metadata } from "@shared/dtos/dto";
-import { Chains, ChainType } from "@shared/dtos/types";
+
+import { Chains, ChainType } from "@zkchainhub/shared";
+
+import { AssetDistribution, BatchesInfo, FeeParams, L2ChainInfo, Metadata } from ".";
 
 /**
  * ZKChainInfo class representing the ZK chain information.

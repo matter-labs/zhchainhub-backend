@@ -59,12 +59,12 @@ $ pnpm run test:cov
 
 ## Creating a new app
 ```bash
-$ pnpm nest g app my-app
+$ pnpm nest g app <app-name>
 ```
 
 ## Creating a new library
 ```bash
-$ pnpm nest g library my-library
+$ pnpm create-lib <lib-name>
 ```
 
 ## 💻 Conventional Commits

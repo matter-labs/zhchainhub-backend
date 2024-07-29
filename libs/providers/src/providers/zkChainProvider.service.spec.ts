@@ -1,8 +1,9 @@
 import { Test, TestingModule } from "@nestjs/testing";
-import { InvalidArgumentException } from "@packages/providers/exceptions";
 import { GetBlockReturnType } from "viem";
 import { localhost } from "viem/chains";
 import { GetL1BatchDetailsReturnType } from "viem/zksync";
+
+import { InvalidArgumentException } from "@zkchainhub/providers/exceptions";
 
 import { ZKChainProviderService } from "./zkChainProvider.service";
 

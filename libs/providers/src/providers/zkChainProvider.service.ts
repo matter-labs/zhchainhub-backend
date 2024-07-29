@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { InvalidArgumentException } from "@packages/providers/exceptions";
-import { EvmProviderService } from "@packages/providers/providers/evmProvider.service";
 import { Chain, Client, createClient, http, HttpTransport } from "viem";
 import { GetL1BatchDetailsReturnType, PublicActionsL2, publicActionsL2 } from "viem/zksync";
+
+import { InvalidArgumentException } from "@zkchainhub/providers/exceptions";
+import { EvmProviderService } from "@zkchainhub/providers/providers/evmProvider.service";
 
 @Injectable()
 /**

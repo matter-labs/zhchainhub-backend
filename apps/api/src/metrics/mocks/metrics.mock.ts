@@ -1,7 +1,4 @@
-import { EcosystemInfo } from "@shared/dtos";
-import { ZKChainInfo } from "@shared/dtos/dto/chain.dto";
-import { L2ChainInfo } from "@shared/dtos/dto/l2Metrics.dto";
-import { Metadata } from "@shared/dtos/dto/metadata.dto";
+import { EcosystemInfo, L2ChainInfo, Metadata, ZKChainInfo } from "../dto/response";
 
 export const getEcosystemInfo = () => {
     const mock = new EcosystemInfo({

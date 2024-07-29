@@ -1,6 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { DataDecodeException, InvalidArgumentException } from "@packages/providers/exceptions";
-import { AbiWithConstructor } from "@packages/providers/types";
 import { AbiParameter } from "abitype";
 import {
     Abi,
@@ -20,6 +18,9 @@ import {
     HttpTransport,
     toHex,
 } from "viem";
+
+import { DataDecodeException, InvalidArgumentException } from "@zkchainhub/providers/exceptions";
+import { AbiWithConstructor } from "@zkchainhub/providers/types";
 
 /**
  * Acts as a wrapper around Viem library to provide methods to interact with an EVM-based blockchain.

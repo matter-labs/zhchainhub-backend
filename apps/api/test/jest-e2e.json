@@ -8,7 +8,7 @@
         "^.+\\.(t|j)s$": "ts-jest"
     },
     "moduleNameMapper": {
-        "^@packages/providers(|/.*)$": "<rootDir>/libs/providers/src/$1",
-        "^@shared/dtos(|/.*)$": "<rootDir>/libs/dtos/src/$1"
+        "^@zkchainhub/providers(|/.*)$": "<rootDir>/libs/providers/src/$1",
+        "^@zkchainhub/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"
     }
 }

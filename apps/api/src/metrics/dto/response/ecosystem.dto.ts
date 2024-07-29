@@ -1,6 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { AssetDistribution, EthGasInfo } from "@shared/dtos/dto";
-import { Chains, ChainType } from "@shared/dtos/types";
+
+import { Chains, ChainType } from "@zkchainhub/shared";
+
+import { AssetDistribution, EthGasInfo } from ".";
 
 /**
  * EcosystemInfo class representing the information about the ecosystem.

@@ -1,13 +1,14 @@
 import { createMock } from "@golevelup/ts-jest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { DataDecodeException } from "@packages/providers/exceptions";
-import {
-    arrayAbiFixture,
-    structAbiFixture,
-} from "@packages/providers/fixtures/batchRequest.fixture";
 import { parseAbi } from "abitype";
 import * as viem from "viem";
 import { localhost } from "viem/chains";
+
+import { DataDecodeException } from "@zkchainhub/providers/exceptions";
+import {
+    arrayAbiFixture,
+    structAbiFixture,
+} from "@zkchainhub/providers/fixtures/batchRequest.fixture";
 
 import { EvmProviderService } from "./evmProvider.service";
 

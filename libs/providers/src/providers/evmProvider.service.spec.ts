@@ -1,8 +1,10 @@
 import { createMock } from "@golevelup/ts-jest";
 import { Test, TestingModule } from "@nestjs/testing";
 import { parseAbi } from "abitype";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import * as viem from "viem";
 import { localhost } from "viem/chains";
+import { Logger } from "winston";
 
 import { DataDecodeException } from "@zkchainhub/providers/exceptions";
 import {
@@ -20,6 +22,13 @@ jest.mock("viem", () => ({
     http: jest.fn(),
 }));
 
+export const mockLogger: Partial<Logger> = {
+    log: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+};
+
 describe("EvmProviderService", () => {
     let viemProvider: EvmProviderService;
     const testAbi = parseAbi([
@@ -32,11 +41,15 @@ describe("EvmProviderService", () => {
         const app: TestingModule = await Test.createTestingModule({
             providers: [
                 {
+                    provide: WINSTON_MODULE_PROVIDER,
+                    useValue: mockLogger,
+                },
+                {
                     provide: EvmProviderService,
                     useFactory: () => {
                         const rpcUrl = "http://localhost:8545";
                         const chain = localhost;
-                        return new EvmProviderService(rpcUrl, chain);
+                        return new EvmProviderService(rpcUrl, chain, mockLogger as Logger);
                     },
                 },
             ],

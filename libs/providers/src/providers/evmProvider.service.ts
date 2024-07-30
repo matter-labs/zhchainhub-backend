@@ -1,5 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable, LoggerService } from "@nestjs/common";
 import { AbiParameter } from "abitype";
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import {
     Abi,
     Address,
@@ -32,6 +33,7 @@ export class EvmProviderService {
     constructor(
         rpcUrl: string,
         readonly chain: Chain,
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
     ) {
         this.client = createPublicClient({
             chain,

@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable, LoggerService } from "@nestjs/common";
+import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import { Chain, Client, createClient, http, HttpTransport } from "viem";
 import { GetL1BatchDetailsReturnType, PublicActionsL2, publicActionsL2 } from "viem/zksync";
 
@@ -12,8 +13,12 @@ import { EvmProviderService } from "@zkchainhub/providers/providers/evmProvider.
 export class ZKChainProviderService extends EvmProviderService {
     private zkClient: Client<HttpTransport, Chain, undefined, undefined, PublicActionsL2>;
 
-    constructor(rpcUrl: string, chain: Chain) {
-        super(rpcUrl, chain);
+    constructor(
+        rpcUrl: string,
+        chain: Chain,
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) logger: LoggerService,
+    ) {
+        super(rpcUrl, chain, logger);
         this.zkClient = createClient({ chain, transport: http(rpcUrl) }).extend(publicActionsL2());
     }
 

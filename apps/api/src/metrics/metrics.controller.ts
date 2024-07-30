@@ -1,5 +1,7 @@
-import { Controller, Get, Param } from "@nestjs/common";
+import { Controller, Get, Inject, Param } from "@nestjs/common";
 import { ApiResponse, ApiTags } from "@nestjs/swagger";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
+import { Logger } from "winston";
 
 import { ParsePositiveIntPipe } from "../common/pipes/parsePositiveInt.pipe";
 import { ZKChainInfo } from "./dto/response";
@@ -11,6 +13,7 @@ import { getEcosystemInfo, getZKChainInfo } from "./mocks/metrics.mock";
  * Controller for handling metrics related endpoints.
  */
 export class MetricsController {
+    constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) {}
     /**
      * Retrieves the ecosystem information.
      * @returns {Promise<EcosystemInfo>} The ecosystem information.

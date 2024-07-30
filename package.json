@@ -28,9 +28,11 @@
         "@nestjs/platform-express": "10.0.0",
         "@nestjs/swagger": "7.4.0",
         "abitype": "1.0.5",
+        "nest-winston": "1.9.7",
         "reflect-metadata": "0.1.13",
         "rxjs": "7.8.1",
-        "viem": "2.17.5"
+        "viem": "2.17.5",
+        "winston": "3.13.1"
     },
     "devDependencies": {
         "@commitlint/config-conventional": "19.2.2",
@@ -44,10 +46,10 @@
         "@types/jest": "29.5.2",
         "@types/node": "20.3.1",
         "@types/supertest": "6.0.0",
-        "@typescript-eslint/eslint-plugin": "7.0.0",
-        "@typescript-eslint/parser": "7.0.0",
+        "@typescript-eslint/eslint-plugin": "7.18.0",
+        "@typescript-eslint/parser": "7.18.0",
         "commitlint": "19.3.0",
-        "eslint": "8.42.0",
+        "eslint": "8.56.0",
         "eslint-config-prettier": "9.0.0",
         "eslint-plugin-prettier": "5.0.0",
         "husky": "9.0.11",

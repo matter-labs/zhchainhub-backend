@@ -1,11 +1,20 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { GetBlockReturnType } from "viem";
 import { localhost } from "viem/chains";
 import { GetL1BatchDetailsReturnType } from "viem/zksync";
+import { Logger } from "winston";
 
 import { InvalidArgumentException } from "@zkchainhub/providers/exceptions";
 
 import { ZKChainProviderService } from "./zkChainProvider.service";
+
+export const mockLogger: Partial<Logger> = {
+    log: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    debug: jest.fn(),
+};
 
 describe("ZKChainProviderService", () => {
     let zkProvider: ZKChainProviderService;
@@ -14,11 +23,15 @@ describe("ZKChainProviderService", () => {
         const app: TestingModule = await Test.createTestingModule({
             providers: [
                 {
+                    provide: WINSTON_MODULE_PROVIDER,
+                    useValue: mockLogger,
+                },
+                {
                     provide: ZKChainProviderService,
                     useFactory: () => {
                         const rpcUrl = "http://localhost:8545";
                         const chain = localhost;
-                        return new ZKChainProviderService(rpcUrl, chain);
+                        return new ZKChainProviderService(rpcUrl, chain, mockLogger as Logger);
                     },
                 },
             ],

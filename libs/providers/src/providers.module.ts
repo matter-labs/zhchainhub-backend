@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 
+import { LoggerModule } from "@zkchainhub/shared";
+
 import { EvmProviderService } from "./providers";
 import { ZKChainProviderService } from "./providers/zkChainProvider.service";
 
@@ -8,6 +10,7 @@ import { ZKChainProviderService } from "./providers/zkChainProvider.service";
  * This module exports Services for interacting with EVM-based blockchains.
  */
 @Module({
+    imports: [LoggerModule],
     providers: [EvmProviderService, ZKChainProviderService],
     exports: [EvmProviderService, ZKChainProviderService],
 })

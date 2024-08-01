@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 
+import { CoingeckoService, PRICING_PROVIDER, PricingModule } from "@zkchainhub/pricing";
 import { ProvidersModule } from "@zkchainhub/providers";
+import { LoggerModule } from "@zkchainhub/shared";
 
 import { L1MetricsService } from "./l1";
 
@@ -9,8 +11,14 @@ import { L1MetricsService } from "./l1";
  * This module exports Services for interacting with EVM-based blockchains.
  */
 @Module({
-    imports: [ProvidersModule],
-    providers: [L1MetricsService],
+    imports: [LoggerModule, ProvidersModule, PricingModule],
+    providers: [
+        L1MetricsService,
+        {
+            provide: PRICING_PROVIDER,
+            useClass: CoingeckoService,
+        },
+    ],
     exports: [L1MetricsService],
 })
 export class MetricsModule {}

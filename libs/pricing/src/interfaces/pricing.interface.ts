@@ -1,6 +1,7 @@
 /**
- * Represents a pricing service that provides token prices.
+ * Represents the symbol used to inject the pricing service interface.
  */
+export const PRICING_PROVIDER = Symbol("IPricingService");
 /**
  * Represents a pricing service that retrieves token prices.
  */

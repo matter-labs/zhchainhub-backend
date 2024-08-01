@@ -1,13 +1,16 @@
+import { createMock } from "@golevelup/ts-jest";
+import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager";
 import { Logger } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { AxiosError, AxiosInstance } from "axios";
+import { AxiosInstance } from "axios";
 import MockAdapter from "axios-mock-adapter";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 
 import { ApiNotAvailable, RateLimitExceeded } from "@zkchainhub/pricing/exceptions";
 import { TokenPrices } from "@zkchainhub/pricing/types/tokenPrice.type";
+import { BASE_CURRENCY } from "@zkchainhub/shared";
 
-import { CoingeckoService } from "./coingecko.service";
+import { CoingeckoService, DECIMALS_PRECISION } from "./coingecko.service";
 
 export const mockLogger: Partial<Logger> = {
     log: jest.fn(),
@@ -20,6 +23,7 @@ describe("CoingeckoService", () => {
     let service: CoingeckoService;
     let axios: AxiosInstance;
     let mockAxios: MockAdapter;
+    let cache: Cache;
     const apiKey = "COINGECKO_API_KEY";
     const apiBaseUrl = "https://api.coingecko.com/api/v3/";
 
@@ -29,14 +33,23 @@ describe("CoingeckoService", () => {
                 CoingeckoService,
                 {
                     provide: CoingeckoService,
-                    useFactory: (logger: Logger) => {
-                        return new CoingeckoService(apiKey, apiBaseUrl, logger);
+                    useFactory: (logger: Logger, cache: Cache) => {
+                        return new CoingeckoService(apiKey, apiBaseUrl, logger, cache);
                     },
-                    inject: [WINSTON_MODULE_PROVIDER],
+                    inject: [WINSTON_MODULE_PROVIDER, CACHE_MANAGER],
                 },
                 {
                     provide: WINSTON_MODULE_PROVIDER,
                     useValue: mockLogger,
+                },
+                {
+                    provide: CACHE_MANAGER,
+                    useValue: createMock<Cache>({
+                        store: createMock<Cache["store"]>({
+                            mget: jest.fn(),
+                            mset: jest.fn(),
+                        }),
+                    }),
                 },
             ],
         }).compile();
@@ -44,6 +57,7 @@ describe("CoingeckoService", () => {
         service = module.get<CoingeckoService>(CoingeckoService);
         axios = service["axios"];
         mockAxios = new MockAdapter(axios);
+        cache = module.get<Cache>(CACHE_MANAGER);
     });
 
     afterEach(() => {
@@ -67,19 +81,19 @@ describe("CoingeckoService", () => {
     });
 
     describe("getTokenPrices", () => {
-        it("return token prices", async () => {
+        it("fetches all token prices from Coingecko", async () => {
             const tokenIds = ["token1", "token2"];
-            const currency = "usd";
             const expectedResponse: TokenPrices = {
                 token1: { usd: 1.23 },
                 token2: { usd: 4.56 },
             };
 
+            jest.spyOn(cache.store, "mget").mockResolvedValueOnce([null, null]);
             jest.spyOn(axios, "get").mockResolvedValueOnce({
                 data: expectedResponse,
             });
 
-            const result = await service.getTokenPrices(tokenIds, { currency });
+            const result = await service.getTokenPrices(tokenIds);
 
             expect(result).toEqual({
                 token1: 1.23,
@@ -87,51 +101,50 @@ describe("CoingeckoService", () => {
             });
             expect(axios.get).toHaveBeenCalledWith(`simple/price`, {
                 params: {
-                    vs_currencies: currency,
+                    vs_currencies: BASE_CURRENCY,
                     ids: tokenIds.join(","),
-                    precision: service["DECIMALS_PRECISION"].toString(),
+                    precision: DECIMALS_PRECISION.toString(),
                 },
             });
+            expect(cache.store.mget).toHaveBeenCalledWith("token1", "token2");
+            expect(cache.store.mset).toHaveBeenCalledWith([
+                ["token1", 1.23],
+                ["token2", 4.56],
+            ]);
         });
 
         it("throw ApiNotAvailable when Coingecko returns a 500 family exception", async () => {
             const tokenIds = ["token1", "token2"];
-            const currency = "usd";
 
+            jest.spyOn(cache.store, "mget").mockResolvedValueOnce([null, null]);
             mockAxios.onGet().replyOnce(503, {
                 data: {},
                 status: 503,
                 statusText: "Service not available",
             });
 
-            await expect(service.getTokenPrices(tokenIds, { currency })).rejects.toThrow(
+            await expect(service.getTokenPrices(tokenIds)).rejects.toThrow(
                 new ApiNotAvailable("Coingecko"),
             );
         });
 
         it("throw RateLimitExceeded when Coingecko returns 429 exception", async () => {
             const tokenIds = ["token1", "token2"];
-            const currency = "usd";
 
+            jest.spyOn(cache.store, "mget").mockResolvedValueOnce([null, null]);
             mockAxios.onGet().replyOnce(429, {
                 data: {},
                 status: 429,
                 statusText: "Too Many Requests",
             });
 
-            await expect(service.getTokenPrices(tokenIds, { currency })).rejects.toThrow(
-                new RateLimitExceeded(),
-            );
+            await expect(service.getTokenPrices(tokenIds)).rejects.toThrow(new RateLimitExceeded());
         });
 
         it("throw an HttpException with the error message when an error occurs", async () => {
             const tokenIds = ["invalidTokenId", "token2"];
-            const currency = "usd";
 
-            jest.spyOn(axios, "get").mockRejectedValueOnce(
-                new AxiosError("Invalid token ID", "400"),
-            );
-
+            jest.spyOn(cache.store, "mget").mockResolvedValueOnce([null, null]);
             mockAxios.onGet().replyOnce(400, {
                 data: {
                     message: "Invalid token ID",
@@ -140,7 +153,7 @@ describe("CoingeckoService", () => {
                 statusText: "Bad Request",
             });
 
-            await expect(service.getTokenPrices(tokenIds, { currency })).rejects.toThrow();
+            await expect(service.getTokenPrices(tokenIds)).rejects.toThrow();
         });
     });
 });

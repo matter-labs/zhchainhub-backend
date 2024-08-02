@@ -2,8 +2,8 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 
-import { MetricsController } from "./metrics.controller";
-import { getEcosystemInfo, getZKChainInfo } from "./mocks/metrics.mock";
+import { MetricsController } from "../../../src/metrics/metrics.controller";
+import { getEcosystemInfo, getZKChainInfo } from "../../../src/metrics/mocks/metrics.mock";
 
 export const mockLogger: Partial<Logger> = {
     log: jest.fn(),

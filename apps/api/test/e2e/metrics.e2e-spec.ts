@@ -2,7 +2,7 @@ import { INestApplication } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import request from "supertest";
 
-import { ApiModule } from "../src/api.module";
+import { ApiModule } from "../../src/api.module";
 
 describe("MetricsController (e2e)", () => {
     let app: INestApplication;

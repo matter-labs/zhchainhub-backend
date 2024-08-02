@@ -6,13 +6,12 @@ import * as viem from "viem";
 import { localhost } from "viem/chains";
 import { Logger } from "winston";
 
+import { EvmProviderService } from "@zkchainhub/providers";
 import { DataDecodeException } from "@zkchainhub/providers/exceptions";
 import {
     arrayAbiFixture,
     structAbiFixture,
 } from "@zkchainhub/providers/fixtures/batchRequest.fixture";
-
-import { EvmProviderService } from "./evmProvider.service";
 
 const mockClient = createMock<ReturnType<typeof viem.createPublicClient>>();
 

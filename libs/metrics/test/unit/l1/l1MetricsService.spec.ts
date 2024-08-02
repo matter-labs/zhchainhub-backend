@@ -2,12 +2,11 @@ import { Logger } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 
+import { L1MetricsService } from "@zkchainhub/metrics/l1/";
 import { bridgeHubAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
 import { L1_CONTRACTS } from "@zkchainhub/shared";
-
-import { L1MetricsService } from "./l1MetricsService";
 
 // Mock implementations of the dependencies
 const mockEvmProviderService = {

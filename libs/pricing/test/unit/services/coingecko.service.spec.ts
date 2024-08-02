@@ -7,10 +7,9 @@ import MockAdapter from "axios-mock-adapter";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 
 import { ApiNotAvailable, RateLimitExceeded } from "@zkchainhub/pricing/exceptions";
+import { CoingeckoService, DECIMALS_PRECISION } from "@zkchainhub/pricing/services";
 import { TokenPrices } from "@zkchainhub/pricing/types/tokenPrice.type";
 import { BASE_CURRENCY } from "@zkchainhub/shared";
-
-import { CoingeckoService, DECIMALS_PRECISION } from "./coingecko.service";
 
 export const mockLogger: Partial<Logger> = {
     log: jest.fn(),

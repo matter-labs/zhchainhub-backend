@@ -5,9 +5,8 @@ import { localhost } from "viem/chains";
 import { GetL1BatchDetailsReturnType } from "viem/zksync";
 import { Logger } from "winston";
 
+import { ZKChainProviderService } from "@zkchainhub/providers";
 import { InvalidArgumentException } from "@zkchainhub/providers/exceptions";
-
-import { ZKChainProviderService } from "./zkChainProvider.service";
 
 export const mockLogger: Partial<Logger> = {
     log: jest.fn(),

@@ -1,24 +1,38 @@
-export type TokenType = {
+/**
+ * The token list in this file was manually crafted and represents the top 50
+ * tokens by market cap, held by L1 Shared Bridge contract and with data
+ * present in Coingecko.
+ * Last updated: 2024-08-03
+ *
+ * This list is not exhaustive and can be updated with more tokens as needed.
+ * Link to the token list: https://etherscan.io/tokenholdings?a=0xD7f9f54194C633F36CCD5F3da84ad4a1c38cB2cB
+ */
+
+import { Address } from "abitype";
+
+export type Token<TokenType extends "erc20" | "native"> = {
     name: string;
     symbol: string;
     coingeckoId: string;
-    type: "erc20" | "native";
-    contractAddress: string | null;
+    type: TokenType;
+    contractAddress: TokenType extends "erc20" ? Address : null;
     decimals: number;
     imageUrl?: string;
 };
 
-export const tokens: TokenType[] = [
-    {
-        name: "Ethereum",
-        symbol: "ETH",
-        contractAddress: null,
-        coingeckoId: "ethereum",
-        type: "native",
-        imageUrl:
-            "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
-        decimals: 18,
-    },
+export type TokenUnion = Token<"erc20"> | Token<"native">;
+
+export const nativeToken: Readonly<Token<"native">> = {
+    name: "Ethereum",
+    symbol: "ETH",
+    contractAddress: null,
+    coingeckoId: "ethereum",
+    type: "native",
+    imageUrl: "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+    decimals: 18,
+};
+
+export const erc20Tokens: Readonly<Token<"erc20">[]> = [
     {
         name: "USDC",
         symbol: "USDC",
@@ -487,3 +501,8 @@ export const tokens: TokenType[] = [
         decimals: 18,
     },
 ];
+
+export const tokens: Readonly<TokenUnion[]> = [nativeToken, ...erc20Tokens];
+
+export const isNativeToken = (token: TokenUnion): token is Token<"native"> =>
+    token.type === "native";

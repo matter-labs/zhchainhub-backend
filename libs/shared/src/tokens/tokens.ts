@@ -32,6 +32,16 @@ export const nativeToken: Readonly<Token<"native">> = {
     decimals: 18,
 };
 
+export const WETH: Readonly<Token<"erc20">> = {
+    name: "Wrapped Ether",
+    symbol: "WETH",
+    contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    coingeckoId: "weth",
+    imageUrl: "https://coin-images.coingecko.com/coins/images/2518/large/weth.png?1696503332",
+    type: "erc20",
+    decimals: 18,
+};
+
 export const erc20Tokens: Readonly<Token<"erc20">[]> = [
     {
         name: "USDC",

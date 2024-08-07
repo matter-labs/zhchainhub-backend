@@ -99,6 +99,24 @@ describe("EvmProviderService", () => {
         });
     });
 
+    describe("estimateGas", () => {
+        it("return the estimated gas for the given transaction", async () => {
+            const args = createMock<viem.EstimateGasParameters<typeof localhost>>({
+                account: "0xffff",
+                to: viem.zeroAddress,
+                value: 100n,
+            });
+
+            const expectedGas = 50000n;
+            jest.spyOn(mockClient, "estimateGas").mockResolvedValue(expectedGas);
+
+            const gas = await viemProvider.estimateGas(args);
+
+            expect(gas).toBe(expectedGas);
+            expect(mockClient.estimateGas).toHaveBeenCalledWith(args);
+        });
+    });
+
     describe("getStorageAt", () => {
         it("should return the value of the storage slot at the given address and slot number", async () => {
             const address = "0x123456789";

@@ -1,22 +1,36 @@
 import assert from "assert";
+import { isNativeError } from "util/types";
 import { Inject, Injectable, LoggerService } from "@nestjs/common";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import {
     Address,
     ContractConstructorArgs,
+    encodeFunctionData,
+    erc20Abi,
     formatUnits,
     parseAbiParameters,
+    parseEther,
     parseUnits,
+    zeroAddress,
 } from "viem";
 
+import { L1ProviderException } from "@zkchainhub/metrics/exceptions/provider.exception";
 import { bridgeHubAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
 import { tokenBalancesAbi } from "@zkchainhub/metrics/l1/abis/tokenBalances.abi";
 import { tokenBalancesBytecode } from "@zkchainhub/metrics/l1/bytecode";
-import { AssetTvl } from "@zkchainhub/metrics/types";
+import { AssetTvl, GasInfo } from "@zkchainhub/metrics/types";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
-import { AbiWithAddress, ChainId, L1_CONTRACTS } from "@zkchainhub/shared";
-import { erc20Tokens, isNativeToken, tokens } from "@zkchainhub/shared/tokens/tokens";
+import { AbiWithAddress, ChainId, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
+import {
+    erc20Tokens,
+    isNativeToken,
+    nativeToken,
+    tokens,
+    WETH,
+} from "@zkchainhub/shared/tokens/tokens";
+
+const ONE_ETHER = parseEther("1");
 
 /**
  * Acts as a wrapper around Viem library to provide methods to interact with an EVM-based blockchain.
@@ -147,10 +161,59 @@ export class L1MetricsService {
     async chainType(_chainId: number): Promise<"validium" | "rollup"> {
         return "rollup";
     }
-    //TODO: Implement ethGasInfo.
-    async ethGasInfo(): Promise<{ gasPrice: number; ethTransfer: number; erc20Transfer: number }> {
-        return { gasPrice: 50, ethTransfer: 21000, erc20Transfer: 65000 };
+
+    /**
+     * Retrieves gas information for Ethereum transfers and ERC20 token transfers.
+     * @returns {GasInfo} A promise that resolves to an object containing gas-related information.
+     */
+    async ethGasInfo(): Promise<GasInfo> {
+        try {
+            const [ethTransferGasCost, erc20TransferGasCost, gasPrice] = await Promise.all([
+                // Estimate gas for an ETH transfer.
+                this.evmProviderService.estimateGas({
+                    account: vitalikAddress,
+                    to: zeroAddress,
+                    value: ONE_ETHER,
+                }),
+                // Estimate gas for an ERC20 transfer.
+                this.evmProviderService.estimateGas({
+                    account: vitalikAddress,
+                    to: WETH.contractAddress,
+                    data: encodeFunctionData({
+                        abi: erc20Abi,
+                        functionName: "transfer",
+                        args: [L1_CONTRACTS.SHARED_BRIDGE, ONE_ETHER],
+                    }),
+                }),
+                // Get the current gas price.
+                this.evmProviderService.getGasPrice(),
+            ]);
+
+            // Get the current price of ether.
+            let ethPriceInUsd: number | undefined = undefined;
+            try {
+                const priceResult = await this.pricingService.getTokenPrices([
+                    nativeToken.coingeckoId,
+                ]);
+                ethPriceInUsd = priceResult[nativeToken.coingeckoId];
+            } catch (e) {
+                this.logger.error("Failed to get the price of ether.");
+            }
+
+            return {
+                gasPrice,
+                ethPrice: ethPriceInUsd,
+                ethTransferGas: ethTransferGasCost,
+                erc20TransferGas: erc20TransferGasCost,
+            };
+        } catch (e: unknown) {
+            if (isNativeError(e)) {
+                this.logger.error(`Failed to get gas information: ${e.message}`);
+            }
+            throw new L1ProviderException("Failed to get gas information from L1.");
+        }
     }
+
     //TODO: Implement feeParams.
     async feeParams(_chainId: number): Promise<{
         batchOverheadL1Gas: number;

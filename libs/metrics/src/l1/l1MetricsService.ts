@@ -22,6 +22,7 @@ import { AssetTvl, GasInfo } from "@zkchainhub/metrics/types";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
 import { AbiWithAddress, ChainId, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
+import { ETH_TOKEN_ADDRESS } from "@zkchainhub/shared/constants/addresses";
 import {
     erc20Tokens,
     isNativeToken,
@@ -151,12 +152,55 @@ export class L1MetricsService {
     ): Promise<{ commited: number; verified: number; proved: number }> {
         return { commited: 100, verified: 100, proved: 100 };
     }
-    //TODO: Implement tvl.
-    async tvl(
-        _chainId: number,
-    ): Promise<{ [asset: string]: { amount: number; amountUsd: number } }> {
-        return { ETH: { amount: 1000000, amountUsd: 1000000 } };
+
+    /**
+     * Retrieves the Total Value Locked for {chainId} by L1 token
+     * @returns A Promise that resolves to an array of AssetTvl objects representing the TVL for each asset.
+     */
+    async tvl(chainId: number): Promise<AssetTvl[]> {
+        const erc20Addresses = erc20Tokens.map((token) => token.contractAddress);
+
+        const balances = await this.fetchTokenBalancesByChain(chainId, erc20Addresses);
+        const pricesRecord = await this.pricingService.getTokenPrices(
+            tokens.map((token) => token.coingeckoId),
+        );
+
+        assert(Object.keys(pricesRecord).length === tokens.length, "Invalid prices length");
+
+        return this.calculateTvl(balances, erc20Addresses, pricesRecord);
     }
+
+    /**
+     * Fetches the token balances for the given addresses and ETH balance on {chainId}
+     * Note: The last balance in the returned array is the ETH balance, so the fetch length should be addresses.length + 1.
+     * @param addresses - An array of addresses for which to fetch the token balances.
+     * @returns A promise that resolves to an object containing the ETH balance and an array of address balances.
+     */
+    private async fetchTokenBalancesByChain(chainId: number, addresses: Address[]) {
+        const chainIdBn = BigInt(chainId);
+        const balances = await this.evmProviderService.multicall({
+            contracts: [
+                ...addresses.map((tokenAddress) => {
+                    return {
+                        address: this.sharedBridge.address,
+                        abi: sharedBridgeAbi,
+                        functionName: "chainBalance",
+                        args: [chainIdBn, tokenAddress],
+                    } as const;
+                }),
+                {
+                    address: this.sharedBridge.address,
+                    abi: sharedBridgeAbi,
+                    functionName: "chainBalance",
+                    args: [chainIdBn, ETH_TOKEN_ADDRESS],
+                } as const,
+            ],
+            allowFailure: false,
+        });
+
+        return { ethBalance: balances[addresses.length]!, addressesBalance: balances.slice(0, -1) };
+    }
+
     //TODO: Implement chainType.
     async chainType(_chainId: number): Promise<"validium" | "rollup"> {
         return "rollup";

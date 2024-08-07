@@ -8,6 +8,7 @@ import {
     ContractConstructorArgs,
     ContractFunctionArgs,
     ContractFunctionName,
+    ContractFunctionParameters,
     ContractFunctionReturnType,
     createPublicClient,
     decodeAbiParameters,
@@ -18,10 +19,16 @@ import {
     Hex,
     http,
     HttpTransport,
+    MulticallParameters,
+    MulticallReturnType,
     toHex,
 } from "viem";
 
-import { DataDecodeException, InvalidArgumentException } from "@zkchainhub/providers/exceptions";
+import {
+    DataDecodeException,
+    InvalidArgumentException,
+    MulticallNotFound,
+} from "@zkchainhub/providers/exceptions";
 import { AbiWithConstructor } from "@zkchainhub/providers/types";
 
 /**
@@ -163,5 +170,23 @@ export class EvmProviderService {
         } catch (e) {
             throw new DataDecodeException("Error decoding return data with given AbiParameters");
         }
+    }
+
+    /**
+     * Similar to readContract, but batches up multiple functions
+     * on a contract in a single RPC call via the multicall3 contract.
+     * @param {MulticallParameters} args - The parameters for the multicall.
+     * @returns — An array of results. If allowFailure is true, with accompanying status
+     * @throws {MulticallNotFound} if the Multicall contract is not found.
+     */
+    async multicall<
+        contracts extends readonly unknown[] = readonly ContractFunctionParameters[],
+        allowFailure extends boolean = true,
+    >(
+        args: MulticallParameters<contracts, allowFailure>,
+    ): Promise<MulticallReturnType<contracts, allowFailure>> {
+        if (!this.chain.contracts?.multicall3?.address) throw new MulticallNotFound();
+
+        return this.client.multicall<contracts, allowFailure>(args);
     }
 }

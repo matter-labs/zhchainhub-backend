@@ -11,7 +11,7 @@ import { tokenBalancesAbi } from "@zkchainhub/metrics/l1/abis/tokenBalances.abi"
 import { tokenBalancesBytecode } from "@zkchainhub/metrics/l1/bytecode";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
-import { L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
+import { ETH_TOKEN_ADDRESS, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
 import { nativeToken, WETH } from "@zkchainhub/shared/tokens/tokens";
 
 // Mock implementations of the dependencies
@@ -249,9 +249,100 @@ describe("L1MetricsService", () => {
     });
 
     describe("tvl", () => {
-        it("return tvl", async () => {
-            const result = await l1MetricsService.tvl(1);
-            expect(result).toEqual({ ETH: { amount: 1000000, amountUsd: 1000000 } });
+        it("return the TVL for chain id", async () => {
+            const mockBalances = [60_841_657_140641n, 135_63005559n, 123_803_824374847279970609n]; // Mocked balances
+            const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
+            const chainId = 324; // this is ZKsyncEra chain id
+
+            jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue(mockBalances);
+            jest.spyOn(mockPricingService, "getTokenPrices").mockResolvedValue(mockPrices);
+
+            const result = await l1MetricsService.tvl(chainId);
+
+            expect(result).toHaveLength(3);
+            expect(result).toEqual([
+                {
+                    amount: "123803.824374847279970609",
+                    amountUsd: expect.stringContaining("393831107.68"),
+                    price: "3181.09",
+                    name: "Ethereum",
+                    symbol: "ETH",
+                    contractAddress: null,
+                    type: "native",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+                    decimals: 18,
+                },
+                {
+                    amount: "60841657.140641",
+                    amountUsd: expect.stringContaining("60780815.48"),
+                    price: "0.999",
+                    name: "USDC",
+                    symbol: "USDC",
+                    contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
+                    type: "erc20",
+                    decimals: 6,
+                },
+                {
+                    amount: "135.63005559",
+                    amountUsd: expect.stringContaining("8969079.94"),
+                    price: "66129",
+                    name: "Wrapped BTC",
+                    symbol: "WBTC",
+                    contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
+                    type: "erc20",
+                    decimals: 8,
+                },
+            ]);
+            expect(mockEvmProviderService.multicall).toHaveBeenCalledWith({
+                contracts: [
+                    {
+                        address: L1_CONTRACTS.SHARED_BRIDGE,
+                        abi: sharedBridgeAbi,
+                        functionName: "chainBalance",
+                        args: [BigInt(chainId), "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],
+                    },
+                    {
+                        address: L1_CONTRACTS.SHARED_BRIDGE,
+                        abi: sharedBridgeAbi,
+                        functionName: "chainBalance",
+                        args: [BigInt(chainId), "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"],
+                    },
+                    {
+                        address: L1_CONTRACTS.SHARED_BRIDGE,
+                        abi: sharedBridgeAbi,
+                        functionName: "chainBalance",
+                        args: [BigInt(chainId), ETH_TOKEN_ADDRESS],
+                    },
+                ],
+                allowFailure: false,
+            });
+            expect(mockPricingService.getTokenPrices).toHaveBeenCalledWith([
+                "ethereum",
+                "usd-coin",
+                "wrapped-bitcoin",
+            ]);
+        });
+
+        it("throws an error if the prices length is invalid", async () => {
+            const chainId = 324;
+            jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue([
+                60_841_657_140641n,
+                135_63005559n,
+                123_803_824374847279970609n,
+            ]);
+            jest.spyOn(mockPricingService, "getTokenPrices").mockResolvedValue({
+                ethereum: 3_181.09,
+                "usd-coin": 0.999,
+            });
+
+            await expect(l1MetricsService.tvl(chainId)).rejects.toThrowError(
+                "Invalid prices length",
+            );
         });
     });
 

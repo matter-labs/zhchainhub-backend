@@ -12,13 +12,13 @@ import {
     zeroAddress,
 } from "viem";
 
-import { L1ProviderException } from "@zkchainhub/metrics/exceptions/provider.exception";
-import { bridgeHubAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
+import { InvalidChainId, L1MetricsServiceException } from "@zkchainhub/metrics/exceptions";
+import { bridgeHubAbi, diamondProxyAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
 import { AssetTvl, GasInfo } from "@zkchainhub/metrics/types";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
-import { AbiWithAddress, ChainId, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
-import { ETH_TOKEN_ADDRESS } from "@zkchainhub/shared/constants/addresses";
+import { BatchesInfo, ChainId, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
+import { ETH_TOKEN_ADDRESS } from "@zkchainhub/shared/constants";
 import {
     erc20Tokens,
     isNativeToken,
@@ -34,15 +34,15 @@ const ONE_ETHER = parseEther("1");
  */
 @Injectable()
 export class L1MetricsService {
-    private readonly bridgeHub: Readonly<AbiWithAddress> = {
+    private readonly bridgeHub = {
         abi: bridgeHubAbi,
         address: L1_CONTRACTS.BRIDGE_HUB,
     };
-    private readonly sharedBridge: Readonly<AbiWithAddress> = {
+    private readonly sharedBridge = {
         abi: sharedBridgeAbi,
         address: L1_CONTRACTS.SHARED_BRIDGE,
     };
-    private readonly diamondContracts: Map<ChainId, AbiWithAddress> = new Map();
+    private readonly diamondContracts: Map<ChainId, Address> = new Map();
 
     constructor(
         private readonly evmProviderService: EvmProviderService,
@@ -143,18 +143,58 @@ export class L1MetricsService {
         return { ethBalance: ethBalance, addressesBalance: balances };
     }
 
-    //TODO: Implement getBatchesInfo.
-    async getBatchesInfo(
-        _chainId: number,
-    ): Promise<{ commited: number; verified: number; proved: number }> {
-        return { commited: 100, verified: 100, proved: 100 };
+    /**
+     *  Retrieves the information about the batches from L2 chain
+     * @param chainId - The chain id for which to get the batches info
+     * @returns commits, verified and executed batches
+     */
+    async getBatchesInfo(chainId: ChainId): Promise<BatchesInfo> {
+        let diamondProxyAddress: Address | undefined = this.diamondContracts.get(chainId);
+
+        if (!diamondProxyAddress) {
+            diamondProxyAddress = await this.evmProviderService.readContract(
+                this.bridgeHub.address,
+                this.bridgeHub.abi,
+                "getHyperchain",
+                [chainId],
+            );
+            if (diamondProxyAddress == zeroAddress) {
+                throw new InvalidChainId(`Chain ID ${chainId} doesn't exist on the ecosystem`);
+            }
+            this.diamondContracts.set(chainId, diamondProxyAddress);
+        }
+
+        const [commited, verified, executed] = await this.evmProviderService.multicall({
+            contracts: [
+                {
+                    address: diamondProxyAddress,
+                    abi: diamondProxyAbi,
+                    functionName: "getTotalBatchesCommitted",
+                    args: [],
+                } as const,
+                {
+                    address: diamondProxyAddress,
+                    abi: diamondProxyAbi,
+                    functionName: "getTotalBatchesVerified",
+                    args: [],
+                } as const,
+                {
+                    address: diamondProxyAddress,
+                    abi: diamondProxyAbi,
+                    functionName: "getTotalBatchesExecuted",
+                    args: [],
+                } as const,
+            ],
+            allowFailure: false,
+        });
+        return { commited, verified, executed };
     }
 
     /**
      * Retrieves the Total Value Locked for {chainId} by L1 token
      * @returns A Promise that resolves to an array of AssetTvl objects representing the TVL for each asset.
      */
-    async tvl(chainId: number): Promise<AssetTvl[]> {
+    async tvl(chainId: ChainId): Promise<AssetTvl[]> {
         const erc20Addresses = erc20Tokens.map((token) => token.contractAddress);
 
         const balances = await this.fetchTokenBalancesByChain(chainId, erc20Addresses);
@@ -173,23 +213,22 @@ export class L1MetricsService {
      * @param addresses - An array of addresses for which to fetch the token balances.
      * @returns A promise that resolves to an object containing the ETH balance and an array of address balances.
      */
-    private async fetchTokenBalancesByChain(chainId: number, addresses: Address[]) {
-        const chainIdBn = BigInt(chainId);
+    private async fetchTokenBalancesByChain(chainId: ChainId, addresses: Address[]) {
         const balances = await this.evmProviderService.multicall({
             contracts: [
                 ...addresses.map((tokenAddress) => {
                     return {
                         address: this.sharedBridge.address,
-                        abi: sharedBridgeAbi,
+                        abi: this.sharedBridge.abi,
                         functionName: "chainBalance",
-                        args: [chainIdBn, tokenAddress],
+                        args: [chainId, tokenAddress],
                     } as const;
                 }),
                 {
                     address: this.sharedBridge.address,
-                    abi: sharedBridgeAbi,
+                    abi: this.sharedBridge.abi,
                     functionName: "chainBalance",
-                    args: [chainIdBn, ETH_TOKEN_ADDRESS],
+                    args: [chainId, ETH_TOKEN_ADDRESS],
                 } as const,
             ],
             allowFailure: false,
@@ -199,7 +238,7 @@ export class L1MetricsService {
     }
 
     //TODO: Implement chainType.
-    async chainType(_chainId: number): Promise<"validium" | "rollup"> {
+    async chainType(_chainId: ChainId): Promise<"validium" | "rollup"> {
         return "rollup";
     }
 
@@ -251,12 +290,12 @@ export class L1MetricsService {
             if (isNativeError(e)) {
                 this.logger.error(`Failed to get gas information: ${e.message}`);
             }
-            throw new L1ProviderException("Failed to get gas information from L1.");
+            throw new L1MetricsServiceException("Failed to get gas information from L1.");
         }
     }
 
     //TODO: Implement feeParams.
-    async feeParams(_chainId: number): Promise<{
+    async feeParams(_chainId: ChainId): Promise<{
         batchOverheadL1Gas: number;
         maxPubdataPerBatch: number;
         maxL2GasPerBatch: number;

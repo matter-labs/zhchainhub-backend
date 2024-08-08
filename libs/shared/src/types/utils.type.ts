@@ -1,5 +1,6 @@
-import { Abi, Address } from "abitype";
+import { Address } from "abitype";
+import { AbiItem } from "viem";
 
-export type AbiWithAddress = { abi: Abi; address: Address };
+export type AbiWithAddress<T extends AbiItem[]> = { abi: T; address: Address };
 
-export type ChainId = number;
+export type ChainId = bigint;

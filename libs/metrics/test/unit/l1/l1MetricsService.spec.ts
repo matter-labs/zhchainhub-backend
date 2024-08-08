@@ -4,12 +4,12 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { encodeFunctionData, erc20Abi, parseEther, zeroAddress } from "viem";
 
-import { L1ProviderException } from "@zkchainhub/metrics/exceptions/provider.exception";
+import { InvalidChainId, L1MetricsServiceException } from "@zkchainhub/metrics/exceptions";
 import { L1MetricsService } from "@zkchainhub/metrics/l1/";
-import { bridgeHubAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
+import { bridgeHubAbi, diamondProxyAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
-import { ETH_TOKEN_ADDRESS, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
+import { BatchesInfo, ETH_TOKEN_ADDRESS, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
 import { nativeToken, WETH } from "@zkchainhub/shared/tokens/tokens";
 
 // Mock implementations of the dependencies
@@ -252,9 +252,112 @@ describe("L1MetricsService", () => {
     });
 
     describe("getBatchesInfo", () => {
-        it("return getBatchesInfo", async () => {
-            const result = await l1MetricsService.getBatchesInfo(1);
-            expect(result).toEqual({ commited: 100, verified: 100, proved: 100 });
+        it("returns batches info for chain id", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+
+            l1MetricsService["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
+            const mockBatchesInfo: BatchesInfo = { commited: 300n, verified: 200n, executed: 100n };
+            const batchesInfoMulticallResponse = [
+                mockBatchesInfo.commited,
+                mockBatchesInfo.verified,
+                mockBatchesInfo.executed,
+            ];
+
+            jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue(
+                batchesInfoMulticallResponse,
+            );
+
+            const result = await l1MetricsService.getBatchesInfo(chainId);
+
+            expect(result).toEqual(mockBatchesInfo);
+            expect(mockEvmProviderService.multicall).toHaveBeenCalledWith({
+                contracts: [
+                    {
+                        address: mockedDiamondProxyAddress,
+                        abi: diamondProxyAbi,
+                        functionName: "getTotalBatchesCommitted",
+                        args: [],
+                    },
+                    {
+                        address: mockedDiamondProxyAddress,
+                        abi: diamondProxyAbi,
+                        functionName: "getTotalBatchesVerified",
+                        args: [],
+                    },
+                    {
+                        address: mockedDiamondProxyAddress,
+                        abi: diamondProxyAbi,
+                        functionName: "getTotalBatchesExecuted",
+                        args: [],
+                    },
+                ],
+                allowFailure: false,
+            });
+        });
+
+        it("throws if chainId doesn't exist on the ecosystem", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            l1MetricsService["diamondContracts"].clear();
+            jest.spyOn(mockEvmProviderService, "readContract").mockResolvedValue(zeroAddress);
+            await expect(l1MetricsService.getBatchesInfo(chainId)).rejects.toThrow(InvalidChainId);
+        });
+
+        it("fetches and sets diamond proxy if chainId doesn't exists on map", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+
+            l1MetricsService["diamondContracts"].clear();
+
+            const mockBatchesInfo: BatchesInfo = { commited: 300n, verified: 200n, executed: 100n };
+            const batchesInfoMulticallResponse = [
+                mockBatchesInfo.commited,
+                mockBatchesInfo.verified,
+                mockBatchesInfo.executed,
+            ];
+
+            jest.spyOn(mockEvmProviderService, "readContract").mockResolvedValue(
+                mockedDiamondProxyAddress,
+            );
+            jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue(
+                batchesInfoMulticallResponse,
+            );
+            const result = await l1MetricsService.getBatchesInfo(chainId);
+
+            expect(result).toEqual(mockBatchesInfo);
+
+            expect(l1MetricsService["diamondContracts"].get(chainId)).toEqual(
+                mockedDiamondProxyAddress,
+            );
+            expect(mockEvmProviderService.readContract).toHaveBeenCalledWith(
+                l1MetricsService["bridgeHub"].address,
+                l1MetricsService["bridgeHub"].abi,
+                "getHyperchain",
+                [BigInt(chainId)],
+            );
+            expect(mockEvmProviderService.multicall).toHaveBeenCalledWith({
+                contracts: [
+                    {
+                        address: mockedDiamondProxyAddress,
+                        abi: diamondProxyAbi,
+                        functionName: "getTotalBatchesCommitted",
+                        args: [],
+                    },
+                    {
+                        address: mockedDiamondProxyAddress,
+                        abi: diamondProxyAbi,
+                        functionName: "getTotalBatchesVerified",
+                        args: [],
+                    },
+                    {
+                        address: mockedDiamondProxyAddress,
+                        abi: diamondProxyAbi,
+                        functionName: "getTotalBatchesExecuted",
+                        args: [],
+                    },
+                ],
+                allowFailure: false,
+            });
         });
     });
 
@@ -262,7 +365,7 @@ describe("L1MetricsService", () => {
         it("return the TVL for chain id", async () => {
             const mockBalances = [60_841_657_140641n, 135_63005559n, 123_803_824374847279970609n]; // Mocked balances
             const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
-            const chainId = 324; // this is ZKsyncEra chain id
+            const chainId = 324n; // this is ZKsyncEra chain id
 
             jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue(mockBalances);
             jest.spyOn(mockPricingService, "getTokenPrices").mockResolvedValue(mockPrices);
@@ -339,7 +442,7 @@ describe("L1MetricsService", () => {
         });
 
         it("throws an error if the prices length is invalid", async () => {
-            const chainId = 324;
+            const chainId = 324n;
             jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue([
                 60_841_657_140641n,
                 135_63005559n,
@@ -358,7 +461,7 @@ describe("L1MetricsService", () => {
 
     describe("chainType", () => {
         it("return chainType", async () => {
-            const result = await l1MetricsService.chainType(1);
+            const result = await l1MetricsService.chainType(1n);
             expect(result).toBe("rollup");
         });
     });
@@ -450,7 +553,7 @@ describe("L1MetricsService", () => {
             expect(mockGetTokenPrices).toHaveBeenCalledWith([nativeToken.coingeckoId]);
         });
 
-        it("throws L1ProviderException when estimateGas fails", async () => {
+        it("throws L1MetricsServiceException when estimateGas fails", async () => {
             // Mock the necessary dependencies
             const mockEstimateGas = jest.spyOn(mockEvmProviderService, "estimateGas");
             mockEstimateGas.mockRejectedValueOnce(new Error("Failed to estimate gas"));
@@ -461,8 +564,8 @@ describe("L1MetricsService", () => {
             const mockGetTokenPrices = jest.spyOn(mockPricingService, "getTokenPrices");
             mockGetTokenPrices.mockResolvedValueOnce({ [nativeToken.coingeckoId]: 2000 }); // ethPriceInUsd
 
-            // Call the method and expect it to throw L1ProviderException
-            await expect(l1MetricsService.ethGasInfo()).rejects.toThrow(L1ProviderException);
+            // Call the method and expect it to throw L1MetricsServiceException
+            await expect(l1MetricsService.ethGasInfo()).rejects.toThrow(L1MetricsServiceException);
 
             // Assertions
             expect(mockEstimateGas).toHaveBeenCalledWith({
@@ -474,7 +577,7 @@ describe("L1MetricsService", () => {
             expect(mockGetTokenPrices).not.toHaveBeenCalled();
         });
 
-        it("throws L1ProviderException when getGasPrice fails", async () => {
+        it("throws L1MetricsServiceException when getGasPrice fails", async () => {
             // Mock the necessary dependencies
             const mockEstimateGas = jest.spyOn(mockEvmProviderService, "estimateGas");
             mockEstimateGas.mockResolvedValueOnce(BigInt(21000)); // ethTransferGasCost
@@ -486,8 +589,8 @@ describe("L1MetricsService", () => {
             const mockGetTokenPrices = jest.spyOn(mockPricingService, "getTokenPrices");
             mockGetTokenPrices.mockResolvedValueOnce({ [nativeToken.coingeckoId]: 2000 }); // ethPriceInUsd
 
-            // Call the method and expect it to throw L1ProviderException
-            await expect(l1MetricsService.ethGasInfo()).rejects.toThrow(L1ProviderException);
+            // Call the method and expect it to throw L1MetricsServiceException
+            await expect(l1MetricsService.ethGasInfo()).rejects.toThrow(L1MetricsServiceException);
 
             // Assertions
             expect(mockEstimateGas).toHaveBeenCalledTimes(2);
@@ -514,7 +617,7 @@ describe("L1MetricsService", () => {
 
     describe("feeParams", () => {
         it("return feeParams", async () => {
-            const result = await l1MetricsService.feeParams(1);
+            const result = await l1MetricsService.feeParams(1n);
             expect(result).toEqual({
                 batchOverheadL1Gas: 50000,
                 maxPubdataPerBatch: 120000,

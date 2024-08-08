@@ -7,8 +7,6 @@ import { encodeFunctionData, erc20Abi, parseEther, zeroAddress } from "viem";
 import { L1ProviderException } from "@zkchainhub/metrics/exceptions/provider.exception";
 import { L1MetricsService } from "@zkchainhub/metrics/l1/";
 import { bridgeHubAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
-import { tokenBalancesAbi } from "@zkchainhub/metrics/l1/abis/tokenBalances.abi";
-import { tokenBalancesBytecode } from "@zkchainhub/metrics/l1/bytecode";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
 import { ETH_TOKEN_ADDRESS, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
@@ -152,10 +150,14 @@ describe("L1MetricsService", () => {
 
     describe("l1Tvl", () => {
         it("return the TVL on L1 Shared Bridge", async () => {
-            const mockBalances = [60_841_657_140641n, 135_63005559n, 123_803_824374847279970609n]; // Mocked balances
+            const mockMulticallBalances = [60_841_657_140641n, 135_63005559n]; // Mocked balances
+            const mockEtherBalance = 123_803_824374847279970609n;
             const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
 
-            jest.spyOn(mockEvmProviderService, "batchRequest").mockResolvedValue([mockBalances]);
+            jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue(
+                mockMulticallBalances,
+            );
+            jest.spyOn(mockEvmProviderService, "getBalance").mockResolvedValue(mockEtherBalance);
             jest.spyOn(mockPricingService, "getTokenPrices").mockResolvedValue(mockPrices);
 
             const result = await l1MetricsService.l1Tvl();
@@ -199,21 +201,25 @@ describe("L1MetricsService", () => {
                     decimals: 8,
                 },
             ]);
-            expect(mockEvmProviderService.batchRequest).toHaveBeenCalledWith(
-                tokenBalancesAbi,
-                tokenBalancesBytecode,
-                [
-                    L1_CONTRACTS.SHARED_BRIDGE,
-                    [
-                        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-                    ],
-                ],
-                [
+            expect(mockEvmProviderService.multicall).toHaveBeenCalledWith({
+                contracts: [
                     {
-                        type: "uint256[]",
+                        address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                        abi: erc20Abi,
+                        functionName: "balanceOf",
+                        args: [L1_CONTRACTS.SHARED_BRIDGE],
+                    },
+                    {
+                        address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                        abi: erc20Abi,
+                        functionName: "balanceOf",
+                        args: [L1_CONTRACTS.SHARED_BRIDGE],
                     },
                 ],
+                allowFailure: false,
+            });
+            expect(mockEvmProviderService.getBalance).toHaveBeenCalledWith(
+                L1_CONTRACTS.SHARED_BRIDGE,
             );
             expect(mockPricingService.getTokenPrices).toHaveBeenCalledWith([
                 "ethereum",
@@ -223,15 +229,19 @@ describe("L1MetricsService", () => {
         });
 
         it("throws an error if the balances length is invalid", async () => {
-            jest.spyOn(mockEvmProviderService, "batchRequest").mockResolvedValue([[]]);
+            jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue([]);
 
             await expect(l1MetricsService.l1Tvl()).rejects.toThrowError("Invalid balances length");
         });
 
         it("throws an error if the prices length is invalid", async () => {
-            jest.spyOn(mockEvmProviderService, "batchRequest").mockResolvedValue([
-                [60_841_657_140641n, 135_63005559n, 123_803_824374847279970609n],
+            jest.spyOn(mockEvmProviderService, "multicall").mockResolvedValue([
+                60_841_657_140641n,
+                135_63005559n,
             ]);
+            jest.spyOn(mockEvmProviderService, "getBalance").mockResolvedValue(
+                123_803_824374847279970609n,
+            );
             jest.spyOn(mockPricingService, "getTokenPrices").mockResolvedValue({
                 ethereum: 3_181.09,
                 "usd-coin": 0.999,

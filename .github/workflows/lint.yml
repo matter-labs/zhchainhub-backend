@@ -33,6 +33,3 @@ jobs:
 
             - name: Run Linter
               run: pnpm lint
-            
-            - name: Run Contracts Linter
-              run: pnpm lint:contracts:check

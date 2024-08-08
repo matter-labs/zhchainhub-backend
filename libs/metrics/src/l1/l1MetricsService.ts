@@ -4,11 +4,9 @@ import { Inject, Injectable, LoggerService } from "@nestjs/common";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import {
     Address,
-    ContractConstructorArgs,
     encodeFunctionData,
     erc20Abi,
     formatUnits,
-    parseAbiParameters,
     parseEther,
     parseUnits,
     zeroAddress,
@@ -16,8 +14,6 @@ import {
 
 import { L1ProviderException } from "@zkchainhub/metrics/exceptions/provider.exception";
 import { bridgeHubAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
-import { tokenBalancesAbi } from "@zkchainhub/metrics/l1/abis/tokenBalances.abi";
-import { tokenBalancesBytecode } from "@zkchainhub/metrics/l1/bytecode";
 import { AssetTvl, GasInfo } from "@zkchainhub/metrics/types";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
@@ -121,29 +117,30 @@ export class L1MetricsService {
 
     /**
      * Fetches the token balances for the given addresses and ETH balance.
-     * Note: The last balance in the returned array is the ETH balance, so the fetch length should be addresses.length + 1.
      * @param addresses - An array of addresses for which to fetch the token balances.
      * @returns A promise that resolves to an object containing the ETH balance and an array of address balances.
      */
     private async fetchTokenBalances(
         addresses: Address[],
     ): Promise<{ ethBalance: bigint; addressesBalance: bigint[] }> {
-        const returnAbiParams = parseAbiParameters("uint256[]");
-        const args: ContractConstructorArgs<typeof tokenBalancesAbi> = [
-            L1_CONTRACTS.SHARED_BRIDGE,
-            addresses,
-        ];
+        const balances = await this.evmProviderService.multicall({
+            contracts: [
+                ...addresses.map((tokenAddress) => {
+                    return {
+                        address: tokenAddress,
+                        abi: erc20Abi,
+                        functionName: "balanceOf",
+                        args: [this.sharedBridge.address],
+                    } as const;
+                }),
+            ],
+            allowFailure: false,
+        });
+        const ethBalance = await this.evmProviderService.getBalance(this.sharedBridge.address);
 
-        const [balances] = await this.evmProviderService.batchRequest(
-            tokenBalancesAbi,
-            tokenBalancesBytecode,
-            args,
-            returnAbiParams,
-        );
+        assert(balances.length === addresses.length, "Invalid balances length");
 
-        assert(balances.length === addresses.length + 1, "Invalid balances length");
-
-        return { ethBalance: balances[addresses.length]!, addressesBalance: balances.slice(0, -1) };
+        return { ethBalance: ethBalance, addressesBalance: balances };
     }
 
     //TODO: Implement getBatchesInfo.

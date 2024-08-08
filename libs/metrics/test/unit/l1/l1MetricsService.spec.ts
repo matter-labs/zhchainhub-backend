@@ -4,12 +4,22 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { encodeFunctionData, erc20Abi, parseEther, zeroAddress } from "viem";
 
-import { InvalidChainId, L1MetricsServiceException } from "@zkchainhub/metrics/exceptions";
+import {
+    InvalidChainId,
+    InvalidChainType,
+    L1MetricsServiceException,
+} from "@zkchainhub/metrics/exceptions";
 import { L1MetricsService } from "@zkchainhub/metrics/l1/";
 import { bridgeHubAbi, diamondProxyAbi, sharedBridgeAbi } from "@zkchainhub/metrics/l1/abis";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
-import { BatchesInfo, ETH_TOKEN_ADDRESS, L1_CONTRACTS, vitalikAddress } from "@zkchainhub/shared";
+import {
+    BatchesInfo,
+    ChainType,
+    ETH_TOKEN_ADDRESS,
+    L1_CONTRACTS,
+    vitalikAddress,
+} from "@zkchainhub/shared";
 import { nativeToken, WETH } from "@zkchainhub/shared/tokens/tokens";
 
 // Mock implementations of the dependencies
@@ -361,6 +371,47 @@ describe("L1MetricsService", () => {
         });
     });
 
+    describe("fetchDiamondProxyAddress", () => {
+        it("returns address if already exists in the map", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+            l1MetricsService["diamondContracts"].clear();
+            l1MetricsService["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
+
+            const readContractSpy = jest.spyOn(mockEvmProviderService, "readContract");
+            const result = await l1MetricsService["fetchDiamondProxyAddress"](chainId);
+
+            expect(result).toEqual(mockedDiamondProxyAddress);
+            expect(l1MetricsService["diamondContracts"].get(chainId)).toEqual(
+                mockedDiamondProxyAddress,
+            );
+            expect(readContractSpy).toHaveBeenCalledTimes(0);
+        });
+        it("fetches and sets diamond proxy if chainId doesn't exists on map", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+
+            l1MetricsService["diamondContracts"].clear();
+
+            jest.spyOn(mockEvmProviderService, "readContract").mockResolvedValue(
+                mockedDiamondProxyAddress,
+            );
+            const result = await l1MetricsService["fetchDiamondProxyAddress"](chainId);
+
+            expect(result).toEqual(mockedDiamondProxyAddress);
+
+            expect(l1MetricsService["diamondContracts"].get(chainId)).toEqual(
+                mockedDiamondProxyAddress,
+            );
+            expect(mockEvmProviderService.readContract).toHaveBeenCalledWith(
+                l1MetricsService["bridgeHub"].address,
+                l1MetricsService["bridgeHub"].abi,
+                "getHyperchain",
+                [BigInt(chainId)],
+            );
+        });
+    });
+
     describe("tvl", () => {
         it("return the TVL for chain id", async () => {
             const mockBalances = [60_841_657_140641n, 135_63005559n, 123_803_824374847279970609n]; // Mocked balances
@@ -460,9 +511,59 @@ describe("L1MetricsService", () => {
     });
 
     describe("chainType", () => {
-        it("return chainType", async () => {
-            const result = await l1MetricsService.chainType(1n);
-            expect(result).toBe("rollup");
+        it("returns chainType", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+
+            l1MetricsService["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
+            const mockChainType: ChainType = "Rollup";
+
+            const readContractSpy = jest
+                .spyOn(mockEvmProviderService, "readContract")
+                .mockResolvedValue(0);
+
+            const result = await l1MetricsService.chainType(chainId);
+
+            expect(result).toEqual(mockChainType);
+            expect(readContractSpy).toHaveBeenCalledWith(
+                mockedDiamondProxyAddress,
+                diamondProxyAbi,
+                "getPubdataPricingMode",
+                [],
+            );
+        });
+        it("returns chainType", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+
+            l1MetricsService["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
+            const mockChainType: ChainType = "Validium";
+
+            const readContractSpy = jest
+                .spyOn(mockEvmProviderService, "readContract")
+                .mockResolvedValue(1);
+
+            const result = await l1MetricsService.chainType(chainId);
+
+            expect(result).toEqual(mockChainType);
+            expect(readContractSpy).toHaveBeenCalledWith(
+                mockedDiamondProxyAddress,
+                diamondProxyAbi,
+                "getPubdataPricingMode",
+                [],
+            );
+        });
+        it("throws if blockchain returns an out of bounds index", async () => {
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+
+            l1MetricsService["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
+
+            jest.spyOn(mockEvmProviderService, "readContract").mockResolvedValue(100);
+
+            await expect(l1MetricsService.chainType(chainId)).rejects.toThrowError(
+                InvalidChainType,
+            );
         });
     });
 

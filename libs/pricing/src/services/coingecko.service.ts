@@ -54,7 +54,7 @@ export class CoingeckoService implements IPricingService {
         const missingTokenIds: string[] = [];
         const cachedMap = cachedTokenPrices.reduce(
             (result, price, index) => {
-                if (price !== null) result[tokenIds.at(index) as string] = price;
+                if (price) result[tokenIds.at(index) as string] = price;
                 else missingTokenIds.push(tokenIds.at(index) as string);
 
                 return result;
@@ -67,10 +67,6 @@ export class CoingeckoService implements IPricingService {
         await this.saveTokenPricesToCache(missingTokenPrices);
 
         return { ...cachedMap, ...missingTokenPrices };
-    }
-
-    private formatTokenCacheKey(tokenId: string, currency: string) {
-        return `${tokenId}.${currency}`;
     }
 
     /**

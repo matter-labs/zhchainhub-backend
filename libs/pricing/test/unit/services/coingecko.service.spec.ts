@@ -112,6 +112,34 @@ describe("CoingeckoService", () => {
             ]);
         });
 
+        it("fetches cached prices and missing from coingecko", async () => {
+            const tokenIds = ["token1", "token2"];
+            const expectedResponse: TokenPrices = {
+                token2: { usd: 4.56 },
+            };
+
+            jest.spyOn(cache.store, "mget").mockResolvedValueOnce([1.25, undefined]);
+            jest.spyOn(axios, "get").mockResolvedValueOnce({
+                data: expectedResponse,
+            });
+
+            const result = await service.getTokenPrices(tokenIds);
+
+            expect(result).toEqual({
+                token1: 1.25,
+                token2: 4.56,
+            });
+            expect(axios.get).toHaveBeenCalledWith(`simple/price`, {
+                params: {
+                    vs_currencies: BASE_CURRENCY,
+                    ids: "token2",
+                    precision: DECIMALS_PRECISION.toString(),
+                },
+            });
+            expect(cache.store.mget).toHaveBeenCalledWith("token1", "token2");
+            expect(cache.store.mset).toHaveBeenCalledWith([["token2", 4.56]]);
+        });
+
         it("throw ApiNotAvailable when Coingecko returns a 500 family exception", async () => {
             const tokenIds = ["token1", "token2"];
 

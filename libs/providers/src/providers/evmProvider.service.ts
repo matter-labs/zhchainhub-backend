@@ -50,6 +50,14 @@ export class EvmProviderService {
     }
 
     /**
+     * Retrieves the address of the Multicall3 contract.
+     * @returns {Address | undefined} The address of the Multicall3 contract, or undefined if not found.
+     */
+    getMulticall3Address(): Address | undefined {
+        return this.chain.contracts?.multicall3?.address;
+    }
+
+    /**
      * Retrieves the balance of the specified address.
      * @param {Address} address The address for which to retrieve the balance.
      * @returns {Promise<bigint>} A Promise that resolves to the balance of the address.

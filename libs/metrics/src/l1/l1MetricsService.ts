@@ -21,6 +21,7 @@ import {
 import {
     bridgeHubAbi,
     diamondProxyAbi,
+    multicall3Abi,
     sharedBridgeAbi,
     stateTransitionManagerAbi,
 } from "@zkchainhub/metrics/l1/abis";
@@ -130,24 +131,46 @@ export class L1MetricsService {
     private async fetchTokenBalances(
         addresses: Address[],
     ): Promise<{ ethBalance: bigint; addressesBalance: bigint[] }> {
-        const balances = await this.evmProviderService.multicall({
-            contracts: [
-                ...addresses.map((tokenAddress) => {
-                    return {
-                        address: tokenAddress,
-                        abi: erc20Abi,
-                        functionName: "balanceOf",
+        const multicall3Address = this.evmProviderService.getMulticall3Address();
+        let balances: bigint[] = [];
+
+        if (multicall3Address) {
+            balances = await this.evmProviderService.multicall({
+                contracts: [
+                    ...addresses.map((tokenAddress) => {
+                        return {
+                            address: tokenAddress,
+                            abi: erc20Abi,
+                            functionName: "balanceOf",
+                            args: [this.sharedBridgeAddress],
+                        } as const;
+                    }),
+                    {
+                        address: multicall3Address,
+                        abi: multicall3Abi,
+                        functionName: "getEthBalance",
                         args: [this.sharedBridgeAddress],
-                    } as const;
-                }),
-            ],
-            allowFailure: false,
-        });
-        const ethBalance = await this.evmProviderService.getBalance(this.sharedBridgeAddress);
+                    } as const,
+                ],
+                allowFailure: false,
+            } as const);
+        } else {
+            balances = await Promise.all([
+                ...addresses.map((tokenAddress) =>
+                    this.evmProviderService.readContract(tokenAddress, erc20Abi, "balanceOf", [
+                        this.sharedBridgeAddress,
+                    ]),
+                ),
+                this.evmProviderService.getBalance(this.sharedBridgeAddress),
+            ]);
+        }
 
-        assert(balances.length === addresses.length, "Invalid balances length");
+        assert(balances.length === addresses.length + 1, "Invalid balances length");
 
-        return { ethBalance: ethBalance, addressesBalance: balances };
+        return {
+            ethBalance: balances[addresses.length]!,
+            addressesBalance: balances,
+        };
     }
 
     /**

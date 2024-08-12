@@ -10,17 +10,7 @@
 
 import { Address } from "abitype";
 
-export type Token<TokenType extends "erc20" | "native"> = {
-    name: string;
-    symbol: string;
-    coingeckoId: string;
-    type: TokenType;
-    contractAddress: TokenType extends "erc20" ? Address : null;
-    decimals: number;
-    imageUrl?: string;
-};
-
-export type TokenUnion = Token<"erc20"> | Token<"native">;
+import { Token, TokenType } from "@zkchainhub/shared/types";
 
 export const nativeToken: Readonly<Token<"native">> = {
     name: "Ethereum",
@@ -42,8 +32,8 @@ export const WETH: Readonly<Token<"erc20">> = {
     decimals: 18,
 };
 
-export const erc20Tokens: Readonly<Token<"erc20">[]> = [
-    {
+export const erc20Tokens: Readonly<Record<Address, Token<"erc20">>> = {
+    "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
         name: "USDC",
         symbol: "USDC",
         contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -52,7 +42,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 6,
     },
-    {
+    "0x9D14BcE1dADdf408d77295BB1be9b343814f44DE": {
         name: "Koi",
         symbol: "KOI",
         contractAddress: "0x9D14BcE1dADdf408d77295BB1be9b343814f44DE",
@@ -62,7 +52,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xdAC17F958D2ee523a2206206994597C13D831ec7": {
         name: "Tether USD",
         symbol: "USDT",
         contractAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
@@ -71,7 +61,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 6,
     },
-    {
+    "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599": {
         name: "Wrapped BTC",
         symbol: "WBTC",
         contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
@@ -81,7 +71,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 8,
     },
-    {
+    "0x77F76483399Dc6328456105B1db23e2Aca455bf9": {
         name: "HYCO",
         symbol: "HYCO",
         contractAddress: "0x77F76483399Dc6328456105B1db23e2Aca455bf9",
@@ -91,7 +81,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xae78736Cd615f374D3085123A210448E74Fc6393": {
         name: "Rocket Pool ETH",
         symbol: "rETH",
         contractAddress: "0xae78736Cd615f374D3085123A210448E74Fc6393",
@@ -100,7 +90,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xF9c53268e9de692AE1b2ea5216E24e1c3ad7CB1E": {
         name: "Idexo Token",
         symbol: "IDO",
         contractAddress: "0xF9c53268e9de692AE1b2ea5216E24e1c3ad7CB1E",
@@ -110,7 +100,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x6B175474E89094C44Da98b954EedeAC495271d0F": {
         name: "Dai Stablecoin",
         symbol: "DAI",
         contractAddress: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
@@ -120,7 +110,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x5F64Ab1544D28732F0A24F4713c2C8ec0dA089f0": {
         name: "DEXTF Token",
         symbol: "DEXTF",
         contractAddress: "0x5F64Ab1544D28732F0A24F4713c2C8ec0dA089f0",
@@ -130,7 +120,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xeEAA40B28A2d1b0B08f6f97bB1DD4B75316c6107": {
         name: "GOVI",
         symbol: "GOVI",
         contractAddress: "0xeEAA40B28A2d1b0B08f6f97bB1DD4B75316c6107",
@@ -139,7 +129,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0": {
         name: "LUSD Stablecoin",
         symbol: "LUSD",
         contractAddress: "0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
@@ -149,7 +139,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x6982508145454Ce325dDbE47a25d4ec3d2311933": {
         name: "Pepe",
         symbol: "PEPE",
         contractAddress: "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
@@ -159,7 +149,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xd38BB40815d2B0c2d2c866e0c72c5728ffC76dd9": {
         name: "Symbiosis",
         symbol: "SIS",
         contractAddress: "0xd38BB40815d2B0c2d2c866e0c72c5728ffC76dd9",
@@ -169,7 +159,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xDDdddd4301A082e62E84e43F474f044423921918": {
         name: "DeversiFi Token",
         symbol: "DVF",
         contractAddress: "0xDDdddd4301A082e62E84e43F474f044423921918",
@@ -179,7 +169,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704": {
         name: "Coinbase Wrapped Staked ETH",
         symbol: "cbETH",
         contractAddress: "0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
@@ -188,7 +178,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xBBBbbBBB46A1dA0F0C3F64522c275BAA4C332636": {
         name: "ZKBase",
         symbol: "ZKB",
         contractAddress: "0xBBBbbBBB46A1dA0F0C3F64522c275BAA4C332636",
@@ -198,7 +188,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xD31a59c85aE9D8edEFeC411D448f90841571b89c": {
         name: "Wrapped SOL (Wormhole)",
         symbol: "SOL",
         contractAddress: "0xD31a59c85aE9D8edEFeC411D448f90841571b89c",
@@ -208,7 +198,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 9,
     },
-    {
+    "0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC": {
         name: "Storj",
         symbol: "STORJ",
         contractAddress: "0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC",
@@ -217,7 +207,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": {
         name: "Wrapped Ether",
         symbol: "WETH",
         contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
@@ -226,7 +216,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1": {
         name: "Wrapped TON Coin",
         symbol: "TONCOIN",
         contractAddress: "0x582d872A1B094FC48F5DE31D3B73F2D9bE47def1",
@@ -236,7 +226,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 9,
     },
-    {
+    "0xfAC77A24E52B463bA9857d6b758ba41aE20e31FF": {
         name: "LSD Coin",
         symbol: "LSD",
         contractAddress: "0xfAC77A24E52B463bA9857d6b758ba41aE20e31FF",
@@ -245,7 +235,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E": {
         name: "Curve.Fi USD Stablecoin",
         symbol: "crvUSD",
         contractAddress: "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
@@ -255,7 +245,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0": {
         name: "Wrapped liquid staked Ether 2.0",
         symbol: "wstETH",
         contractAddress: "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
@@ -265,7 +255,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE": {
         name: "SHIBA INU",
         symbol: "SHIB",
         contractAddress: "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE",
@@ -274,7 +264,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xA91ac63D040dEB1b7A5E4d4134aD23eb0ba07e14": {
         name: "Bella",
         symbol: "BEL",
         contractAddress: "0xA91ac63D040dEB1b7A5E4d4134aD23eb0ba07e14",
@@ -283,7 +273,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x111111111117dC0aa78b770fA6A738034120C302": {
         name: "1INCH Token",
         symbol: "1INCH",
         contractAddress: "0x111111111117dC0aa78b770fA6A738034120C302",
@@ -293,7 +283,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xA487bF43cF3b10dffc97A9A744cbB7036965d3b9": {
         name: "Deri",
         symbol: "DERI",
         contractAddress: "0xA487bF43cF3b10dffc97A9A744cbB7036965d3b9",
@@ -303,7 +293,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x163f8C2467924be0ae7B5347228CABF260318753": {
         name: "Worldcoin",
         symbol: "WLD",
         contractAddress: "0x163f8C2467924be0ae7B5347228CABF260318753",
@@ -313,7 +303,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x7448c7456a97769F6cD04F1E83A4a23cCdC46aBD": {
         name: "Maverick Token",
         symbol: "MAV",
         contractAddress: "0x7448c7456a97769F6cD04F1E83A4a23cCdC46aBD",
@@ -323,7 +313,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xa41d2f8Ee4F47D3B860A149765A7dF8c3287b7F0": {
         name: "Syncus",
         symbol: "SYNC",
         contractAddress: "0xa41d2f8Ee4F47D3B860A149765A7dF8c3287b7F0",
@@ -333,7 +323,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xC91a71A1fFA3d8B22ba615BA1B9c01b2BBBf55ad": {
         name: "ZigZag",
         symbol: "ZZ",
         contractAddress: "0xC91a71A1fFA3d8B22ba615BA1B9c01b2BBBf55ad",
@@ -342,7 +332,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x18084fbA666a33d37592fA2633fD49a74DD93a88": {
         name: "tBTC v2",
         symbol: "tBTC",
         contractAddress: "0x18084fbA666a33d37592fA2633fD49a74DD93a88",
@@ -352,7 +342,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7": {
         name: "rsETH",
         symbol: "rsETH",
         contractAddress: "0xA1290d69c65A6Fe4DF752f95823fae25cB99e5A7",
@@ -362,7 +352,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x0a77eF9bf662D62Fbf9BA4cf861EaA83F9CC4FEC": {
         name: "XWG",
         symbol: "XWG",
         contractAddress: "0x0a77eF9bf662D62Fbf9BA4cf861EaA83F9CC4FEC",
@@ -372,7 +362,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x72e364F2ABdC788b7E918bc238B21f109Cd634D7": {
         name: "Metaverse Index",
         symbol: "MVI",
         contractAddress: "0x72e364F2ABdC788b7E918bc238B21f109Cd634D7",
@@ -382,7 +372,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x514910771AF9Ca656af840dff83E8264EcF986CA": {
         name: "ChainLink Token",
         symbol: "LINK",
         contractAddress: "0x514910771AF9Ca656af840dff83E8264EcF986CA",
@@ -392,7 +382,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9": {
         name: "Aave Token",
         symbol: "AAVE",
         contractAddress: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
@@ -402,7 +392,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x5C1d9aA868a30795F92fAe903eDc9eFF269044bf": {
         name: "Changer",
         symbol: "CNG",
         contractAddress: "0x5C1d9aA868a30795F92fAe903eDc9eFF269044bf",
@@ -411,7 +401,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0": {
         name: "Tellor Tributes",
         symbol: "TRB",
         contractAddress: "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0",
@@ -421,7 +411,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xbf5495Efe5DB9ce00f80364C8B423567e58d2110": {
         name: "Renzo Restaked ETH",
         symbol: "Renzo Restaked ETH",
         contractAddress: "0xbf5495Efe5DB9ce00f80364C8B423567e58d2110",
@@ -431,7 +421,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0": {
         name: "Matic Token",
         symbol: "MATIC",
         contractAddress: "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
@@ -441,7 +431,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x4691937a7508860F876c9c0a2a617E7d9E945D4B": {
         name: "WOO",
         symbol: "WOO",
         contractAddress: "0x4691937a7508860F876c9c0a2a617E7d9E945D4B",
@@ -451,7 +441,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0x62D0A8458eD7719FDAF978fe5929C6D342B0bFcE": {
         name: "Beam",
         symbol: "BEAM",
         contractAddress: "0x62D0A8458eD7719FDAF978fe5929C6D342B0bFcE",
@@ -461,7 +451,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xC9fE6E1C76210bE83DC1B5b20ec7FD010B0b1D15": {
         name: "Fringe",
         symbol: "FRIN",
         contractAddress: "0xC9fE6E1C76210bE83DC1B5b20ec7FD010B0b1D15",
@@ -470,7 +460,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xfFffFffF2ba8F66D4e51811C5190992176930278": {
         name: "Furucombo",
         symbol: "COMBO",
         contractAddress: "0xfFffFffF2ba8F66D4e51811C5190992176930278",
@@ -480,7 +470,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa": {
         name: "mETH",
         symbol: "mETH",
         contractAddress: "0xd5F7838F5C461fefF7FE49ea5ebaF7728bB0ADfa",
@@ -490,7 +480,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xe2353069f71a27bBbe66eEabfF05dE109c7d5E19": {
         name: "Bonsai3",
         symbol: "SEED",
         contractAddress: "0xe2353069f71a27bBbe66eEabfF05dE109c7d5E19",
@@ -500,7 +490,7 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-    {
+    "0xD33526068D116cE69F19A9ee46F0bd304F21A51f": {
         name: "Rocket Pool",
         symbol: "RPL",
         contractAddress: "0xD33526068D116cE69F19A9ee46F0bd304F21A51f",
@@ -510,9 +500,6 @@ export const erc20Tokens: Readonly<Token<"erc20">[]> = [
         type: "erc20",
         decimals: 18,
     },
-];
+};
 
-export const tokens: Readonly<TokenUnion[]> = [nativeToken, ...erc20Tokens];
-
-export const isNativeToken = (token: TokenUnion): token is Token<"native"> =>
-    token.type === "native";
+export const tokens: Readonly<Token<TokenType>[]> = [nativeToken, Object(erc20Tokens).values];

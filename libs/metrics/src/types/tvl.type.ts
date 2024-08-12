@@ -1,6 +1,6 @@
-import { TokenUnion } from "@zkchainhub/shared/tokens/tokens";
+import { Token, TokenType } from "@zkchainhub/shared";
 
-export type AssetTvl = Omit<TokenUnion, "coingeckoId"> & {
+export type AssetTvl = Omit<Token<TokenType>, "coingeckoId"> & {
     amount: string;
     amountUsd: string;
     price: string;

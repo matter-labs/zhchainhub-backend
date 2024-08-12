@@ -1,6 +1,14 @@
 import { Inject, Injectable, LoggerService } from "@nestjs/common";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
-import { Chain, Client, createClient, http, HttpTransport } from "viem";
+import {
+    Chain,
+    Client,
+    createClient,
+    fallback,
+    FallbackTransport,
+    http,
+    HttpTransport,
+} from "viem";
 import { GetL1BatchDetailsReturnType, PublicActionsL2, publicActionsL2 } from "viem/zksync";
 
 import { InvalidArgumentException } from "@zkchainhub/providers/exceptions";
@@ -11,15 +19,24 @@ import { EvmProviderService } from "@zkchainhub/providers/providers/evmProvider.
  * Acts as a wrapper around Viem library to provide methods to interact with ZK chains.
  */
 export class ZKChainProviderService extends EvmProviderService {
-    private zkClient: Client<HttpTransport, Chain, undefined, undefined, PublicActionsL2>;
+    private zkClient: Client<
+        FallbackTransport<HttpTransport[]>,
+        Chain,
+        undefined,
+        undefined,
+        PublicActionsL2
+    >;
 
     constructor(
-        rpcUrl: string,
+        rpcUrls: string[],
         chain: Chain,
         @Inject(WINSTON_MODULE_NEST_PROVIDER) logger: LoggerService,
     ) {
-        super(rpcUrl, chain, logger);
-        this.zkClient = createClient({ chain, transport: http(rpcUrl) }).extend(publicActionsL2());
+        super(rpcUrls, chain, logger);
+        this.zkClient = createClient({
+            chain,
+            transport: fallback(rpcUrls.map((rpcUrl) => http(rpcUrl))),
+        }).extend(publicActionsL2());
     }
 
     /**

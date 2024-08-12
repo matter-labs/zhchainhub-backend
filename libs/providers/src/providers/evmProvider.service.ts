@@ -15,6 +15,8 @@ import {
     DecodeAbiParametersReturnType,
     encodeDeployData,
     EstimateGasParameters,
+    fallback,
+    FallbackTransport,
     GetBlockReturnType,
     Hex,
     http,
@@ -28,6 +30,7 @@ import {
     DataDecodeException,
     InvalidArgumentException,
     MulticallNotFound,
+    RpcUrlsEmpty,
 } from "@zkchainhub/providers/exceptions";
 import { AbiWithConstructor } from "@zkchainhub/providers/types";
 
@@ -36,16 +39,22 @@ import { AbiWithConstructor } from "@zkchainhub/providers/types";
  */
 @Injectable()
 export class EvmProviderService {
-    private client: ReturnType<typeof createPublicClient<HttpTransport, Chain>>;
+    private client: ReturnType<
+        typeof createPublicClient<FallbackTransport<HttpTransport[]>, Chain>
+    >;
 
     constructor(
-        rpcUrl: string,
+        rpcUrls: string[],
         readonly chain: Chain,
         @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
     ) {
+        if (rpcUrls.length === 0) {
+            throw new RpcUrlsEmpty();
+        }
+
         this.client = createPublicClient({
             chain,
-            transport: http(rpcUrl),
+            transport: fallback(rpcUrls.map((rpcUrl) => http(rpcUrl))),
         });
     }
 

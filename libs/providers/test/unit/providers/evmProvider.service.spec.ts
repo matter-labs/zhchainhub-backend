@@ -7,7 +7,11 @@ import { localhost } from "viem/chains";
 import { Logger } from "winston";
 
 import { EvmProviderService } from "@zkchainhub/providers";
-import { DataDecodeException, MulticallNotFound } from "@zkchainhub/providers/exceptions";
+import {
+    DataDecodeException,
+    MulticallNotFound,
+    RpcUrlsEmpty,
+} from "@zkchainhub/providers/exceptions";
 import {
     arrayAbiFixture,
     structAbiFixture,
@@ -48,8 +52,8 @@ describe("EvmProviderService", () => {
                 {
                     provide: EvmProviderService,
                     useFactory: () => {
-                        const rpcUrl = "http://localhost:8545";
-                        return new EvmProviderService(rpcUrl, mockChain, mockLogger as Logger);
+                        const rpcUrls = ["http://localhost:8545"];
+                        return new EvmProviderService(rpcUrls, mockChain, mockLogger as Logger);
                     },
                 },
             ],
@@ -61,6 +65,12 @@ describe("EvmProviderService", () => {
     afterEach(() => {
         jest.clearAllMocks();
         jest.resetModules();
+    });
+
+    it("throws RpcUrlsEmpty error if rpcUrls is empty", () => {
+        expect(() => {
+            new EvmProviderService([], mockChain, mockLogger as Logger);
+        }).toThrowError(RpcUrlsEmpty);
     });
 
     describe("getBalance", () => {

@@ -6,7 +6,7 @@ import { GetL1BatchDetailsReturnType } from "viem/zksync";
 import { Logger } from "winston";
 
 import { ZKChainProviderService } from "@zkchainhub/providers";
-import { InvalidArgumentException } from "@zkchainhub/providers/exceptions";
+import { InvalidArgumentException, RpcUrlsEmpty } from "@zkchainhub/providers/exceptions";
 
 export const mockLogger: Partial<Logger> = {
     log: jest.fn(),
@@ -28,9 +28,9 @@ describe("ZKChainProviderService", () => {
                 {
                     provide: ZKChainProviderService,
                     useFactory: () => {
-                        const rpcUrl = "http://localhost:8545";
+                        const rpcUrls = ["http://localhost:8545"];
                         const chain = localhost;
-                        return new ZKChainProviderService(rpcUrl, chain, mockLogger as Logger);
+                        return new ZKChainProviderService(rpcUrls, chain, mockLogger as Logger);
                     },
                 },
             ],
@@ -41,6 +41,12 @@ describe("ZKChainProviderService", () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    it("throws RpcUrlsEmpty error if rpcUrls is empty", () => {
+        expect(() => {
+            new ZKChainProviderService([], localhost, mockLogger as Logger);
+        }).toThrowError(RpcUrlsEmpty);
     });
 
     describe("avgBlockTime", () => {

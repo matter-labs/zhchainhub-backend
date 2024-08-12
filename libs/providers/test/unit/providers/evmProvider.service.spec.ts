@@ -131,6 +131,18 @@ describe("EvmProviderService", () => {
             expect(mockClient.getStorageAt).toHaveBeenCalledWith({ address, slot: "0x1" });
         });
 
+        it("should return the value of the storage slot at the given address and slot value", async () => {
+            const address = "0x123456789";
+            const slot = "0x12";
+            const expectedValue = "0xabcdef";
+            jest.spyOn(mockClient, "getStorageAt").mockResolvedValue(expectedValue);
+
+            const value = await viemProvider.getStorageAt(address, slot);
+
+            expect(value).toBe(expectedValue);
+            expect(mockClient.getStorageAt).toHaveBeenCalledWith({ address, slot: "0x12" });
+        });
+
         it("should throw an error if the slot is not a positive integer", async () => {
             const address = "0x123456789";
             const slot = -1;

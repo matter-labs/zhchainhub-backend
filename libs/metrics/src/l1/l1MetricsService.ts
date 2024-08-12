@@ -7,6 +7,7 @@ import {
     encodeFunctionData,
     erc20Abi,
     formatUnits,
+    Hex,
     parseEther,
     parseUnits,
     zeroAddress,
@@ -23,7 +24,7 @@ import {
     sharedBridgeAbi,
     stateTransitionManagerAbi,
 } from "@zkchainhub/metrics/l1/abis";
-import { AssetTvl, GasInfo } from "@zkchainhub/metrics/types";
+import { AssetTvl, FeeParams, feeParamsFieldHexDigits, GasInfo } from "@zkchainhub/metrics/types";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
 import { BatchesInfo, ChainId, Chains, ChainType, vitalikAddress } from "@zkchainhub/shared";
@@ -38,6 +39,7 @@ import { Token } from "@zkchainhub/shared/types";
 import { isNativeToken } from "@zkchainhub/shared/utils";
 
 const ONE_ETHER = parseEther("1");
+const FEE_PARAMS_SLOT: Hex = `0x26`;
 
 /**
  * Acts as a wrapper around Viem library to provide methods to interact with an EVM-based blockchain.
@@ -370,20 +372,54 @@ export class L1MetricsService {
         });
     }
 
-    //TODO: Implement feeParams.
-    async feeParams(_chainId: ChainId): Promise<{
-        batchOverheadL1Gas: number;
-        maxPubdataPerBatch: number;
-        maxL2GasPerBatch: number;
-        priorityTxMaxPubdata: number;
-        minimalL2GasPrice: number;
-    }> {
+    /**
+     * Retrieves the fee parameters for a specific chain.
+     *
+     * @param chainId - The ID of the chain.
+     * @returns A Promise that resolves to a FeeParams object containing the fee parameters.
+     * @throws {L1MetricsServiceException} If the fee parameters cannot be retrieved from L1.
+     */
+    async feeParams(chainId: ChainId): Promise<FeeParams> {
+        const diamondProxyAddress = await this.fetchDiamondProxyAddress(chainId);
+
+        // Read the storage at the target slot;
+        const feeParamsData = await this.evmProviderService.getStorageAt(
+            diamondProxyAddress,
+            FEE_PARAMS_SLOT,
+        );
+        if (!feeParamsData) {
+            throw new L1MetricsServiceException("Failed to get fee params from L1.");
+        }
+
+        const strippedParamsData = feeParamsData.replace(/^0x/, "");
+        let cursor = strippedParamsData.length;
+        const values: string[] = [];
+
+        //read fields from Right to Left
+        for (const digits of feeParamsFieldHexDigits) {
+            const hexValue = strippedParamsData.slice(cursor - digits, cursor);
+            assert(hexValue, "Error parsing fee params");
+            values.push(hexValue);
+            cursor -= digits;
+        }
+
+        const [
+            pubdataPricingMode,
+            batchOverheadL1Gas,
+            maxPubdataPerBatch,
+            maxL2GasPerBatch,
+            priorityTxMaxPubdata,
+            minimalL2GasPrice,
+        ] = values as [string, string, string, string, string, string];
+
+        // Convert hex to decimal
         return {
-            batchOverheadL1Gas: 50000,
-            maxPubdataPerBatch: 120000,
-            maxL2GasPerBatch: 10000000,
-            priorityTxMaxPubdata: 15000,
-            minimalL2GasPrice: 10000000,
+            pubdataPricingMode: parseInt(pubdataPricingMode, 16),
+            batchOverheadL1Gas: parseInt(batchOverheadL1Gas, 16),
+            maxPubdataPerBatch: parseInt(maxPubdataPerBatch, 16),
+            maxL2GasPerBatch: parseInt(maxL2GasPerBatch, 16),
+            priorityTxMaxPubdata: parseInt(priorityTxMaxPubdata, 16),
+            minimalL2GasPrice: BigInt(`0x${minimalL2GasPrice}`),
         };
     }
 }

@@ -859,15 +859,48 @@ describe("L1MetricsService", () => {
     });
 
     describe("feeParams", () => {
-        it("return feeParams", async () => {
-            const result = await l1MetricsService.feeParams(1n);
-            expect(result).toEqual({
-                batchOverheadL1Gas: 50000,
+        it("should retrieve the fee parameters for a specific chain", async () => {
+            // Mock the dependencies
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+            const mockFeeParamsRawData =
+                "0x00000000000000000000000ee6b280000182b804c4b4000001d4c0000f424000";
+
+            const mockFeeParams = {
+                pubdataPricingMode: 0,
+                batchOverheadL1Gas: 1000000,
                 maxPubdataPerBatch: 120000,
-                maxL2GasPerBatch: 10000000,
-                priorityTxMaxPubdata: 15000,
-                minimalL2GasPrice: 10000000,
-            });
+                maxL2GasPerBatch: 80000000,
+                priorityTxMaxPubdata: 99000,
+                minimalL2GasPrice: 250000000n,
+            };
+
+            l1MetricsService["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
+            jest.spyOn(mockEvmProviderService, "getStorageAt").mockResolvedValue(
+                mockFeeParamsRawData,
+            );
+
+            const result = await l1MetricsService.feeParams(chainId);
+
+            expect(mockEvmProviderService.getStorageAt).toHaveBeenCalledWith(
+                mockedDiamondProxyAddress,
+                `0x26`,
+            );
+
+            expect(result).toEqual(mockFeeParams);
+        });
+
+        it("should throw an exception if the fee parameters cannot be retrieved from L1", async () => {
+            // Mock the dependencies
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
+            l1MetricsService["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
+
+            jest.spyOn(mockEvmProviderService, "getStorageAt").mockResolvedValue(undefined);
+
+            await expect(l1MetricsService.feeParams(chainId)).rejects.toThrow(
+                L1MetricsServiceException,
+            );
         });
     });
 });

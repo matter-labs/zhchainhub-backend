@@ -93,8 +93,8 @@ export class EvmProviderService {
      * @returns {Promise<Hex>} A Promise that resolves to the value of the storage slot.
      * @throws {InvalidArgumentException} If the slot is not a positive integer.
      */
-    async getStorageAt(address: Address, slot: number): Promise<Hex | undefined> {
-        if (slot <= 0 || !Number.isInteger(slot)) {
+    async getStorageAt(address: Address, slot: number | Hex): Promise<Hex | undefined> {
+        if (typeof slot === "number" && (slot <= 0 || !Number.isInteger(slot))) {
             throw new InvalidArgumentException(
                 `Slot must be a positive integer number. Received: ${slot}`,
             );
@@ -102,7 +102,7 @@ export class EvmProviderService {
 
         return this.client.getStorageAt({
             address,
-            slot: toHex(slot),
+            slot: typeof slot === "string" ? slot : toHex(slot),
         });
     }
 

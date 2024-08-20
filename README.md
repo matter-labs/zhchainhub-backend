@@ -1,4 +1,4 @@
-# zkChainHub
+# ZKchainHub - Backend
 
 ## Description
 
@@ -28,6 +28,17 @@ graph LR
 $ pnpm install
 ```
 
+## ⚙️ Setting up env variables
+
+- Create `.env` file in the `root` folder and copy paste `.env.example` content in there.
+```
+$ cp .env.example .env
+```
+- Set up `L1_RPC_URLS` as CSV list of RPC URLs. For example, `https://eth.llamarpc.com,https://rpc.flashbots.net/fast`. You can check [Chainlist](https://chainlist.org/) for a list of public RPCs
+- Set up `L2_RPC_URLS` as CSV list of RPC URLs. For example, `https://mainnet.era.zksync.io`. You can check [Chainlist](https://chainlist.org/) for a list of public RPCs
+- Set `COINGECKO_API_KEY`, `COINGECKO_BASE_URL` and `COINGECKO_API_KEY` depending on your API plan. You can get an API Key creating an account on [Coingecko's site](https://www.coingecko.com/en/api)
+- (Optionally) Set `PORT` on which API is made available. By default is port 3000
+
 ## Running the app
 
 ```bash
@@ -44,6 +55,8 @@ $ pnpm run start:prod
 $ pnpm run start my-app
 ```
 
+Verify that ZKchainHub API is running on http://localhost:3000 (or the port specified)
+
 ## Test
 
 ```bash
@@ -57,15 +70,31 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
-## Creating a new app
+## Docs
+Locally Swagger docs are available at http://localhost:3000/docs
+
+## Development
+
+### Linter
+Run `pnpm lint` to make sure the code base follows configured linter rules.
+
+### Creating a new app
 ```bash
 $ pnpm nest g app <app-name>
 ```
 
-## Creating a new library
+### Creating a new library
 ```bash
 $ pnpm create-lib <lib-name>
 ```
 
-## 💻 Conventional Commits
+### 💻 Conventional Commits
 We follow the Conventional Commits [specification](https://www.conventionalcommits.org/en/v1.0.0/#specification).
+
+## Contributing
+
+ZKchainHub was built with ❤️ by [Wonderland](https://defi.sucks).
+
+Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
+
+[DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.

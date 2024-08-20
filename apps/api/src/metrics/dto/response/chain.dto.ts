@@ -1,8 +1,9 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 
-import { Chains, ChainType } from "@zkchainhub/shared";
+import { AssetTvl } from "@zkchainhub/metrics/types";
+import { ChainType, Token } from "@zkchainhub/shared";
 
-import { AssetDistribution, BatchesInfo, FeeParams, L2ChainInfo, Metadata } from ".";
+import { BatchesInfo, FeeParams, L2ChainInfo, ZkChainMetadata } from ".";
 
 /**
  * ZKChainInfo class representing the ZK chain information.
@@ -13,30 +14,26 @@ export class ZKChainInfo {
      * @type {ChainType}
      * @memberof ZKChainInfo
      */
-    @ApiProperty({ enum: Chains, enumName: "ChainType" })
     chainType: ChainType;
 
     /**
-     * A map of asset names to their respective amounts.
-     * @type {AssetDistribution}
-     * @memberof ZKChainInfo
-     * @example { ETH: 1000000, ZK: 500000 }
+     * The native token of the chain (optional).
+     * @type {Token<"erc20" | "native">}
+     * @memberof ZKChainSummary
      */
-    @ApiProperty({
-        example: { ETH: 1000000, ZK: 500000 },
-        description: "A map of asset names to their respective amounts",
-        additionalProperties: {
-            type: "number",
-        },
-    })
-    tvl: AssetDistribution;
+    baseToken?: Token<"erc20" | "native">;
+    /**
+     * A map of asset names to their respective amounts.
+     * @type {AssetTvl}
+     * @memberof ZKChainInfo
+     */
+    tvl: AssetTvl[];
 
     /**
      * Optional batches information.
      * @type {BatchesInfo}
      * @memberof ZKChainInfo
      */
-    @ApiPropertyOptional()
     batchesInfo?: BatchesInfo;
 
     /**
@@ -48,11 +45,11 @@ export class ZKChainInfo {
 
     /**
      * Optional metadata.
-     * @type {Metadata}
+     * @type {ZkChainMetadata}
      * @memberof ZKChainInfo
      */
-    @ApiPropertyOptional({ type: Metadata })
-    metadata?: Metadata;
+    @ApiPropertyOptional({ type: ZkChainMetadata })
+    metadata?: ZkChainMetadata;
 
     /**
      * Optional Layer 2 chain information.
@@ -65,6 +62,7 @@ export class ZKChainInfo {
     constructor(data: ZKChainInfo) {
         this.chainType = data.chainType;
         this.tvl = data.tvl;
+        this.baseToken = data.baseToken;
         this.batchesInfo = data.batchesInfo;
         this.feeParams = data.feeParams;
         this.metadata = data.metadata;

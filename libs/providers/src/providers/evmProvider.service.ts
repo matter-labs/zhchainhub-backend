@@ -1,6 +1,5 @@
-import { Inject, Injectable, LoggerService } from "@nestjs/common";
+import { Inject, Injectable, Logger, LoggerService } from "@nestjs/common";
 import { AbiParameter } from "abitype";
-import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import {
     Abi,
     Address,
@@ -46,7 +45,7 @@ export class EvmProviderService {
     constructor(
         rpcUrls: string[],
         readonly chain: Chain,
-        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
+        @Inject(Logger) private readonly logger: LoggerService,
     ) {
         if (rpcUrls.length === 0) {
             throw new RpcUrlsEmpty();

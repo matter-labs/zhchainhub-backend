@@ -11,24 +11,24 @@ export class AssetDistribution {
 export class BatchesInfo {
     /**
      * The number of committed batches.
-     * @type {number}
+     * @type {string}
      * @memberof BatchesInfo
      */
-    commited: number;
+    commited: string;
 
     /**
-     * The number of verified batches.
-     * @type {number}
+     * The string of verified batches.
+     * @type {string}
      * @memberof BatchesInfo
      */
-    verified: number;
+    verified: string;
 
     /**
-     * The number of proved batches.
-     * @type {number}
+     * The string of proved batches.
+     * @type {string}
      * @memberof BatchesInfo
      */
-    proved: number;
+    executed: string;
 
     /**
      * Constructs an instance of the BatchesInfo class.
@@ -37,7 +37,7 @@ export class BatchesInfo {
     constructor(data: BatchesInfo) {
         this.commited = data.commited;
         this.verified = data.verified;
-        this.proved = data.proved;
+        this.executed = data.executed;
     }
 }
 
@@ -47,29 +47,37 @@ export class BatchesInfo {
 export class EthGasInfo {
     /**
      * The gas price.
-     * @type {number}
+     * @type {string}
      * @memberof EthGasInfo
      */
-    gasPrice: number;
+    gasPrice: string;
 
     /**
      * The gas cost for ETH transfer.
-     * @type {number}
+     * @type {string}
      * @memberof EthGasInfo
      */
-    ethTransfer: number;
+    ethTransfer: string;
 
     /**
      * The gas cost for ERC20 transfer.
-     * @type {number}
+     * @type {string}
      * @memberof EthGasInfo
      */
-    erc20Transfer: number;
+    erc20Transfer: string;
+
+    /**
+     * The price of ETH in USD
+     * @type {string}
+     * @memberof EthGasInfo
+     */
+    ethPrice?: string;
 
     constructor(data: EthGasInfo) {
         this.gasPrice = data.gasPrice;
         this.ethTransfer = data.ethTransfer;
         this.erc20Transfer = data.erc20Transfer;
+        this.ethPrice = data.ethPrice;
     }
 }
 
@@ -107,10 +115,10 @@ export class FeeParams {
 
     /**
      * The minimal L2 gas price.
-     * @type {number}
+     * @type {string}
      * @memberof FeeParams
      */
-    minimalL2GasPrice: number;
+    minimalL2GasPrice: string;
 
     /**
      * Constructs an instance of the FeeParams class.

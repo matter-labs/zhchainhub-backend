@@ -1,8 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 
-import { Chains, ChainType } from "@zkchainhub/shared";
+import { AssetTvl } from "@zkchainhub/metrics/types";
+import { Chains, ChainType, Token } from "@zkchainhub/shared";
 
-import { AssetDistribution, EthGasInfo } from ".";
+import { EthGasInfo, ZkChainMetadata } from ".";
 
 /**
  * EcosystemInfo class representing the information about the ecosystem.
@@ -21,7 +22,7 @@ export class EcosystemInfo {
             type: "number",
         },
     })
-    l1Tvl: AssetDistribution;
+    l1Tvl: AssetTvl[];
 
     /**
      * The Ethereum gas information.
@@ -58,7 +59,7 @@ export class ZKChainSummary {
      * @type {number}
      * @memberof ZKChainSummary
      */
-    chainId: number;
+    chainId: string;
 
     /**
      * The type of chain.
@@ -73,21 +74,21 @@ export class ZKChainSummary {
      * @type {string}
      * @memberof ZKChainSummary
      */
-    nativeToken?: string;
+    baseToken?: Token<"erc20" | "native">;
 
     /**
      * The total value locked in the chain.
-     * @type {number}
+     * @type {string}
      * @memberof ZKChainSummary
      */
-    tvl: number;
+    tvl: string;
 
     /**
      * Metadata flag (optional).
-     * @type {boolean}
+     * @type {ZkChainMetadata}
      * @memberof ZKChainSummary
      */
-    metadata?: boolean;
+    metadata?: ZkChainMetadata;
 
     /**
      * RPC flag (optional).
@@ -99,7 +100,7 @@ export class ZKChainSummary {
     constructor(data: ZKChainSummary) {
         this.chainId = data.chainId;
         this.chainType = data.chainType;
-        this.nativeToken = data.nativeToken;
+        this.baseToken = data.baseToken;
         this.tvl = data.tvl;
         this.metadata = data.metadata;
         this.rpc = data.rpc;

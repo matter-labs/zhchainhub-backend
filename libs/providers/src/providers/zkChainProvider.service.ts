@@ -1,5 +1,4 @@
-import { Inject, Injectable, LoggerService } from "@nestjs/common";
-import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
+import { Injectable, LoggerService } from "@nestjs/common";
 import {
     Chain,
     Client,
@@ -27,11 +26,7 @@ export class ZKChainProviderService extends EvmProviderService {
         PublicActionsL2
     >;
 
-    constructor(
-        rpcUrls: string[],
-        chain: Chain,
-        @Inject(WINSTON_MODULE_NEST_PROVIDER) logger: LoggerService,
-    ) {
+    constructor(rpcUrls: string[], chain: Chain, logger: LoggerService) {
         super(rpcUrls, chain, logger);
         this.zkClient = createClient({
             chain,

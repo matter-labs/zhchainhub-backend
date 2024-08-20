@@ -1,7 +1,5 @@
-/**
- * Represents the symbol used to inject the pricing service interface.
- */
-export const PRICING_PROVIDER = Symbol("IPricingService");
+import { PricingProvider } from "@zkchainhub/pricing/configuration";
+
 /**
  * Represents a pricing service that retrieves token prices.
  */
@@ -14,4 +12,11 @@ export interface IPricingService {
     getTokenPrices<TokenId extends string = string>(
         tokenIds: TokenId[],
     ): Promise<Record<string, number>>;
+}
+
+/**
+ * Represents the base interface for Pricing service options
+ */
+export interface IPricingOptions {
+    provider: PricingProvider;
 }

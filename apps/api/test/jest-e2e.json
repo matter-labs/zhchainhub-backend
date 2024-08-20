@@ -9,6 +9,8 @@
     },
     "moduleNameMapper": {
         "^@zkchainhub/providers(|/.*)$": "<rootDir>/libs/providers/src/$1",
-        "^@zkchainhub/shared(|/.*)$": "<rootDir>/libs/shared/src/$1"
+        "^@zkchainhub/metrics(|/.*)$": "<rootDir>/libs/metrics/src/$1",
+        "^@zkchainhub/shared(|/.*)$": "<rootDir>/libs/shared/src/$1",
+        "^@zkchainhub/pricing(|/.*)$": "<rootDir>/libs/pricing/src/$1"
     }
 }

@@ -16,6 +16,7 @@ import {
     multicall3Abi,
     sharedBridgeAbi,
 } from "@zkchainhub/metrics/l1/abis";
+import { FeeParams } from "@zkchainhub/metrics/types";
 import { IPricingService, PRICING_PROVIDER } from "@zkchainhub/pricing";
 import { EvmProviderService } from "@zkchainhub/providers";
 import { MulticallNotFound } from "@zkchainhub/providers/exceptions";
@@ -28,7 +29,6 @@ import {
     nativeToken,
     Token,
     TokenType,
-    vitalikAddress,
     WETH,
 } from "@zkchainhub/shared";
 
@@ -38,8 +38,8 @@ const mockEvmProviderService = createMock<EvmProviderService>();
 const mockPricingService = createMock<IPricingService>();
 
 const ONE_ETHER = parseEther("1");
-jest.mock("@zkchainhub/shared/constants/token", () => ({
-    ...jest.requireActual("@zkchainhub/shared/constants/token"),
+jest.mock("@zkchainhub/shared/metadata/token", () => ({
+    ...jest.requireActual("@zkchainhub/shared/metadata/token"),
     erc20Tokens: {
         "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
             name: "USDC",
@@ -690,19 +690,18 @@ describe("L1MetricsService", () => {
 
             const mockGetTokenPrices = jest.spyOn(mockPricingService, "getTokenPrices");
             mockGetTokenPrices.mockResolvedValueOnce({ [nativeToken.coingeckoId]: 2000 }); // ethPriceInUsd
-
             // Call the method
             const result = await l1MetricsService.ethGasInfo();
 
             // Assertions
             expect(mockEstimateGas).toHaveBeenCalledTimes(2);
             expect(mockEstimateGas).toHaveBeenNthCalledWith(1, {
-                account: vitalikAddress,
+                account: zeroAddress,
                 to: zeroAddress,
                 value: ONE_ETHER,
             });
             expect(mockEstimateGas).toHaveBeenNthCalledWith(2, {
-                account: vitalikAddress,
+                account: zeroAddress,
                 to: WETH.contractAddress,
                 data: encodeFunctionData({
                     abi: erc20Abi,
@@ -719,8 +718,8 @@ describe("L1MetricsService", () => {
             expect(result).toEqual({
                 gasPrice: 50000000000n,
                 ethPrice: 2000,
-                ethTransferGas: 21000n,
-                erc20TransferGas: 65000n,
+                ethTransfer: 21000n,
+                erc20Transfer: 65000n,
             });
         });
 
@@ -741,17 +740,17 @@ describe("L1MetricsService", () => {
             expect(result).toEqual({
                 gasPrice: 50000000000n,
                 ethPrice: undefined,
-                ethTransferGas: 21000n,
-                erc20TransferGas: 65000n,
+                ethTransfer: 21000n,
+                erc20Transfer: 65000n,
             });
             expect(mockEstimateGas).toHaveBeenCalledTimes(2);
             expect(mockEstimateGas).toHaveBeenNthCalledWith(1, {
-                account: vitalikAddress,
+                account: zeroAddress,
                 to: zeroAddress,
                 value: ONE_ETHER,
             });
             expect(mockEstimateGas).toHaveBeenNthCalledWith(2, {
-                account: vitalikAddress,
+                account: zeroAddress,
                 to: WETH.contractAddress,
                 data: encodeFunctionData({
                     abi: erc20Abi,
@@ -782,7 +781,7 @@ describe("L1MetricsService", () => {
 
             // Assertions
             expect(mockEstimateGas).toHaveBeenCalledWith({
-                account: vitalikAddress,
+                account: zeroAddress,
                 to: zeroAddress,
                 value: ONE_ETHER,
             });
@@ -808,12 +807,12 @@ describe("L1MetricsService", () => {
             // Assertions
             expect(mockEstimateGas).toHaveBeenCalledTimes(2);
             expect(mockEstimateGas).toHaveBeenNthCalledWith(1, {
-                account: vitalikAddress,
+                account: zeroAddress,
                 to: zeroAddress,
                 value: ONE_ETHER,
             });
             expect(mockEstimateGas).toHaveBeenNthCalledWith(2, {
-                account: vitalikAddress,
+                account: zeroAddress,
                 to: WETH.contractAddress,
                 data: encodeFunctionData({
                     abi: erc20Abi,
@@ -961,7 +960,7 @@ describe("L1MetricsService", () => {
             const mockFeeParamsRawData =
                 "0x00000000000000000000000ee6b280000182b804c4b4000001d4c0000f424000";
 
-            const mockFeeParams = {
+            const mockFeeParams: FeeParams = {
                 pubdataPricingMode: 0,
                 batchOverheadL1Gas: 1000000,
                 maxPubdataPerBatch: 120000,

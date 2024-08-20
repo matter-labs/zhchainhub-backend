@@ -10,7 +10,7 @@
 
 import { Address } from "abitype";
 
-import { Token, TokenType } from "@zkchainhub/shared/types";
+import { Token, TokenType } from "../types";
 
 export const nativeToken: Readonly<Token<"native">> = {
     name: "Ethereum",
@@ -502,4 +502,4 @@ export const erc20Tokens: Readonly<Record<Address, Token<"erc20">>> = {
     },
 };
 
-export const tokens: Readonly<Token<TokenType>[]> = [nativeToken, Object(erc20Tokens).values];
+export const tokens: Readonly<Token<TokenType>[]> = [nativeToken, ...Object.values(erc20Tokens)];

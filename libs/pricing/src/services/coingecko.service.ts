@@ -1,14 +1,16 @@
+import { isNativeError } from "util/types";
 import { Cache, CACHE_MANAGER } from "@nestjs/cache-manager";
-import { Inject, Injectable, LoggerService } from "@nestjs/common";
+import { Inject, Injectable, Logger, LoggerService } from "@nestjs/common";
 import axios, { AxiosInstance, isAxiosError } from "axios";
-import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 
+import { PRICING_OPTIONS, PricingProviderOptions } from "@zkchainhub/pricing/configuration";
 import { ApiNotAvailable, RateLimitExceeded } from "@zkchainhub/pricing/exceptions";
 import { IPricingService } from "@zkchainhub/pricing/interfaces";
 import { TokenPrices } from "@zkchainhub/pricing/types/tokenPrice.type";
-import { BASE_CURRENCY } from "@zkchainhub/shared";
+import { BASE_CURRENCY, Optional } from "@zkchainhub/shared";
 
-export const AUTH_HEADER = "x-cg-pro-api-key";
+export const AUTH_HEADER = (type: "demo" | "pro") =>
+    type === "demo" ? "x-cg-demo-api-key" : "x-cg-pro-api-key";
 export const DECIMALS_PRECISION = 3;
 
 /**
@@ -21,20 +23,23 @@ export class CoingeckoService implements IPricingService {
 
     /**
      *
-     * @param apiKey  * @param apiKey - Coingecko API key.
-     * @param apiBaseUrl - Base URL for Coingecko API. If you have a Pro account, you can use the Pro API URL.
+     * @param
+     * @param options.apiKey - Coingecko API key.
+     * @param options.apiBaseUrl - Base URL for Coingecko API. If you have a Pro account, you can use the Pro API URL.
      */
     constructor(
-        private readonly apiKey: string,
-        private readonly apiBaseUrl: string = "https://api.coingecko.com/api/v3/",
-        @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: LoggerService,
+        @Inject(PRICING_OPTIONS)
+        private readonly options: Optional<PricingProviderOptions<"coingecko">, "provider">,
         @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+        @Inject(Logger) private readonly logger: LoggerService,
     ) {
+        const { apiKey, apiBaseUrl, apiType } = options;
+
         this.axios = axios.create({
             baseURL: apiBaseUrl,
             headers: {
                 common: {
-                    [AUTH_HEADER]: apiKey,
+                    [AUTH_HEADER(apiType)]: apiKey,
                     Accept: "application/json",
                 },
             },
@@ -123,7 +128,6 @@ export class CoingeckoService implements IPricingService {
      */
     private handleError(error: unknown) {
         let exception;
-
         if (isAxiosError(error)) {
             const statusCode = error.response?.status ?? 0;
             if (statusCode >= 500) {
@@ -132,11 +136,14 @@ export class CoingeckoService implements IPricingService {
                 exception = new RateLimitExceeded();
             } else {
                 exception = new Error(
-                    error.response?.data || "An error occurred while fetching data",
+                    error.response?.data || `An error occurred while fetching data: ${error}`,
                 );
             }
 
             throw exception;
+        } else if (isNativeError(error)) {
+            this.logger.error(error);
+            throw new Error("A non network related error occurred");
         } else {
             this.logger.error(error);
             throw new Error("A non network related error occurred");

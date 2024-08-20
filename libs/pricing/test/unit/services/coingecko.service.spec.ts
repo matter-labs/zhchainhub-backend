@@ -25,6 +25,7 @@ describe("CoingeckoService", () => {
     let cache: Cache;
     const apiKey = "COINGECKO_API_KEY";
     const apiBaseUrl = "https://api.coingecko.com/api/v3/";
+    const apiType = "demo";
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -33,7 +34,7 @@ describe("CoingeckoService", () => {
                 {
                     provide: CoingeckoService,
                     useFactory: (logger: Logger, cache: Cache) => {
-                        return new CoingeckoService(apiKey, apiBaseUrl, logger, cache);
+                        return new CoingeckoService({ apiKey, apiBaseUrl, apiType }, cache, logger);
                     },
                     inject: [WINSTON_MODULE_PROVIDER, CACHE_MANAGER],
                 },
@@ -73,7 +74,7 @@ describe("CoingeckoService", () => {
         expect(axios.defaults.baseURL).toBe(apiBaseUrl);
         expect(axios.defaults.headers.common).toEqual(
             expect.objectContaining({
-                "x-cg-pro-api-key": apiKey,
+                "x-cg-demo-api-key": apiKey,
                 Accept: "application/json",
             }),
         );

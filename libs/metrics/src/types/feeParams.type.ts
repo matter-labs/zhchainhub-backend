@@ -5,7 +5,7 @@ export type FeeParams = {
     maxPubdataPerBatch: number;
     maxL2GasPerBatch: number;
     priorityTxMaxPubdata: number;
-    minimalL2GasPrice?: bigint;
+    minimalL2GasPrice: bigint;
 };
 
 // Define the lengths for each field (in hex digits, each byte is 2 hex digits)

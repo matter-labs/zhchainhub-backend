@@ -42,3 +42,6 @@ coverage
 
 contracts/out
 contracts/cache
+
+# Turborepo
+.turbo

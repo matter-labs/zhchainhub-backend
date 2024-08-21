@@ -1,0 +1,40 @@
+{
+    "name": "@zkchainhub/api",
+    "version": "1.0.0",
+    "main": "./dist/index.js",
+    "type": "module",
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "check-types": "tsc --noEmit -p ./tsconfig.json",
+        "clean": "rm -rf dist",
+        "dev": "tsx watch src/index.ts",
+        "lint": "eslint \"{src,test}/**/*.{js,ts,json}\"",
+        "lint:fix": "pnpm lint --fix",
+        "format": "prettier --check \"{src,test}/**/*.{js,ts,json}\"",
+        "format:fix": "prettier --write \"{src,test}/**/*.{js,ts,json}\"",
+        "start": "node dist/index.js",
+        "test": "vitest run --config vitest.config.ts --passWithNoTests",
+        "test:cov": "vitest run --config vitest.config.ts --coverage"
+    },
+    "dependencies": {
+        "@zkchainhub/metrics": "workspace:*",
+        "@zkchainhub/pricing": "workspace:*",
+        "@zkchainhub/providers": "workspace:*",
+        "@zkchainhub/shared": "workspace:*",
+        "bignumber.js": "9.1.2",
+        "cache-manager": "5.7.6",
+        "cors": "2.8.5",
+        "dotenv": "16.4.5",
+        "express": "4.19.2",
+        "swagger-ui-express": "5.0.1",
+        "viem": "2.19.6",
+        "yaml": "2.5.0",
+        "zod": "3.23.8"
+    },
+    "devDependencies": {
+        "@types/cors": "2.8.17",
+        "@types/express": "4.17.17",
+        "@types/swagger-ui-express": "4.1.6",
+        "tsx": "4.17.0"
+    }
+}

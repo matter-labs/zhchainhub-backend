@@ -1,9 +1,7 @@
-import { ApiProperty } from "@nestjs/swagger";
+import { AssetTvl } from "@zkchainhub/metrics";
+import { ChainType, Token } from "@zkchainhub/shared";
 
-import { AssetTvl } from "@zkchainhub/metrics/types";
-import { Chains, ChainType, Token } from "@zkchainhub/shared";
-
-import { EthGasInfo, ZkChainMetadata } from ".";
+import { EthGasInfo, ZkChainMetadata } from "./index.js";
 
 /**
  * EcosystemInfo class representing the information about the ecosystem.
@@ -15,13 +13,6 @@ export class EcosystemInfo {
      * @memberof EcosystemInfo
      * @example { ETH: 1000000, ZK: 500000 }
      */
-    @ApiProperty({
-        example: { ETH: 1000000, ZK: 500000 },
-        description: "A map of asset names to their respective amounts",
-        additionalProperties: {
-            type: "number",
-        },
-    })
     l1Tvl: AssetTvl[];
 
     /**
@@ -36,7 +27,6 @@ export class EcosystemInfo {
      * @type {ZKChainSummary[]}
      * @memberof EcosystemInfo
      */
-    @ApiProperty({ isArray: true })
     zkChains: ZKChainSummary[];
 
     /**
@@ -66,7 +56,6 @@ export class ZKChainSummary {
      * @type {ChainType}
      * @memberof ZKChainSummary
      */
-    @ApiProperty({ enum: Chains, enumName: "ChainType" })
     chainType: ChainType;
 
     /**

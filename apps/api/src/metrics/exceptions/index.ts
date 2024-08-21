@@ -1,1 +1,1 @@
-export * from "./chainNotFound.exception";
+export * from "./chainNotFound.exception.js";

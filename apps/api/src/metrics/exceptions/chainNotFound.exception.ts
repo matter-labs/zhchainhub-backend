@@ -1,10 +1,5 @@
-import { HttpException, HttpStatus } from "@nestjs/common";
-
-export class ChainNotFound extends HttpException {
+export class ChainNotFound extends Error {
     constructor(chainId: bigint) {
-        super(
-            `Chain with id ${chainId.toString()} not found on the current ecosystem.`,
-            HttpStatus.NOT_FOUND,
-        );
+        super(`Chain with id ${chainId.toString()} not found on the current ecosystem.`);
     }
 }

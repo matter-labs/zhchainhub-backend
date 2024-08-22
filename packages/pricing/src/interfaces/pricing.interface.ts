@@ -4,7 +4,7 @@ export type PricingProvider = "coingecko";
 /**
  * Represents a pricing service that retrieves token prices.
  */
-export interface IPricingService {
+export interface IPricingProvider {
     /**
      * Retrieves the prices of the specified tokens.
      * @param tokenIds - An array of token IDs.

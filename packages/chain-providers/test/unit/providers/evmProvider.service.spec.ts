@@ -8,7 +8,7 @@ import { ILogger } from "@zkchainhub/shared";
 import { arrayAbiFixture, structAbiFixture } from "../../../src/fixtures/batchRequest.fixture.js";
 import {
     DataDecodeException,
-    EvmProviderService,
+    EvmProvider,
     MulticallNotFound,
     RpcUrlsEmpty,
 } from "../../../src/internal.js";
@@ -45,8 +45,8 @@ const testAbi = parseAbi([
     "function tokenURI(uint256 tokenId) pure returns (string)",
 ]);
 
-describe("EvmProviderService", () => {
-    let viemProvider: EvmProviderService | null = null;
+describe("EvmProvider", () => {
+    let viemProvider: EvmProvider | null = null;
     const defaultMockChain: viem.Chain = vi.mocked<viem.Chain>({
         ...localhost,
         contracts: { multicall3: undefined },
@@ -60,19 +60,19 @@ describe("EvmProviderService", () => {
     });
 
     it("has a client property defined", () => {
-        viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+        viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
         expect(viemProvider["client"]).toBeDefined();
     });
 
     it("throws RpcUrlsEmpty error if rpcUrls is empty", () => {
         expect(() => {
-            new EvmProviderService([], defaultMockChain, mockLogger);
+            new EvmProvider([], defaultMockChain, mockLogger);
         }).toThrowError(RpcUrlsEmpty);
     });
 
     describe("getBalance", () => {
         it("should return the balance of the specified address", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const address = "0x123456789";
             const expectedBalance = 100n;
             vi.spyOn(mockClient, "getBalance").mockResolvedValue(expectedBalance);
@@ -86,7 +86,7 @@ describe("EvmProviderService", () => {
 
     describe("getBlockNumber", () => {
         it("should return the current block number", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const expectedBlockNumber = 1000n;
             vi.spyOn(mockClient, "getBlockNumber").mockResolvedValue(expectedBlockNumber);
 
@@ -98,7 +98,7 @@ describe("EvmProviderService", () => {
 
     describe("getGasPrice", () => {
         it("should return the current gas price", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const expectedGasPrice = BigInt(100);
             // Mock the getGasPrice method of the Viem client
             vi.spyOn(mockClient, "getGasPrice").mockResolvedValue(expectedGasPrice);
@@ -111,7 +111,7 @@ describe("EvmProviderService", () => {
 
     describe("estimateGas", () => {
         it("return the estimated gas for the given transaction", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const args = vi.mocked<viem.EstimateGasParameters<typeof localhost>>({
                 account: "0xffff",
                 to: viem.zeroAddress,
@@ -130,7 +130,7 @@ describe("EvmProviderService", () => {
 
     describe("getStorageAt", () => {
         it("should return the value of the storage slot at the given address and slot number", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const address = "0x123456789";
             const slot = 1;
             const expectedValue = "0xabcdef";
@@ -143,7 +143,7 @@ describe("EvmProviderService", () => {
         });
 
         it("should return the value of the storage slot at the given address and slot value", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const address = "0x123456789";
             const slot = "0x12";
             const expectedValue = "0xabcdef";
@@ -156,7 +156,7 @@ describe("EvmProviderService", () => {
         });
 
         it("should throw an error if the slot is not a positive integer", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const address = "0x123456789";
             const slot = -1;
 
@@ -168,7 +168,7 @@ describe("EvmProviderService", () => {
 
     describe("readContract", () => {
         it("should call the readContract method of the Viem client with the correct arguments", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const contractAddress = "0x123456789";
             const abi = testAbi;
             const functionName = "balanceOf";
@@ -188,7 +188,7 @@ describe("EvmProviderService", () => {
         });
 
         it("should call the readContract method of the Viem client with the correct arguments when args are provided", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const contractAddress = "0x123456789";
             const functionName = "tokenURI";
             const args = [1n] as const;
@@ -216,7 +216,7 @@ describe("EvmProviderService", () => {
 
     describe("batchRequest", () => {
         it("should properly encode bytecode data and decode return data from batch request call", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const returnAbiParams = viem.parseAbiParameters([
                 "TokenData[] returnData",
                 "struct TokenData { uint8 tokenDecimals; string tokenSymbol; string tokenName; }",
@@ -245,7 +245,7 @@ describe("EvmProviderService", () => {
         });
 
         it("should fail if no data is returned", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const returnAbiParams = viem.parseAbiParameters([
                 "TokenData[] returnData",
                 "struct TokenData { uint8 tokenDecimals; string tokenSymbol; string tokenName; }",
@@ -264,7 +264,7 @@ describe("EvmProviderService", () => {
         });
 
         it("should fail if decoded data does not match validator (missing struct fields)", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             // this schema is incorrect, it should have 3 fields instead of 2
             const returnAbiParams = viem.parseAbiParameters([
                 "WrongTokenData[] returnData",
@@ -286,7 +286,7 @@ describe("EvmProviderService", () => {
         });
 
         it("should fail if decoded data does not match validator (not struct vs struct)", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             // this schema is incorrect, it should have 3 fields instead of 2
             const returnAbiParams = viem.parseAbiParameters("uint8 decimals, address[] owners");
 
@@ -305,7 +305,7 @@ describe("EvmProviderService", () => {
         });
 
         it("should properly decode address[]", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const returnAbiParams = viem.parseAbiParameters("address[]");
 
             vi.spyOn(mockClient, "call").mockResolvedValue({ data: arrayAbiFixture.returnData });
@@ -327,7 +327,7 @@ describe("EvmProviderService", () => {
                 contracts: { multicall3: { address: "0x123456789" } },
             });
 
-            viemProvider = new EvmProviderService(defaultRpcUrls, mockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, mockChain, mockLogger);
             const contracts = [
                 {
                     address: "0x123456789",
@@ -363,7 +363,7 @@ describe("EvmProviderService", () => {
         });
 
         it("throws a MulticallNotFound error if the Multicall contract is not found for the chain", async () => {
-            viemProvider = new EvmProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            viemProvider = new EvmProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const contracts = [
                 {
                     address: "0x123456789",

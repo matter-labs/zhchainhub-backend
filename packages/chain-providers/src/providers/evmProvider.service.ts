@@ -37,7 +37,7 @@ import {
 /**
  * Acts as a wrapper around Viem library to provide methods to interact with an EVM-based blockchain.
  */
-export class EvmProviderService {
+export class EvmProvider {
     private client: ReturnType<
         typeof createPublicClient<FallbackTransport<HttpTransport[]>, Chain>
     >;

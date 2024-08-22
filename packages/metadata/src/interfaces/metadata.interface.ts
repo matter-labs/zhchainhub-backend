@@ -1,6 +1,6 @@
 import { Token, TokenType, ZKChainMetadata } from "@zkchainhub/shared";
 
-export interface IMetadataService {
+export interface IMetadataProvider {
     getChainsMetadata(): Promise<ZKChainMetadata>;
     getTokensMetadata(): Promise<Token<TokenType>[]>;
 }

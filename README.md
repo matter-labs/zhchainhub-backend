@@ -10,7 +10,7 @@ You can fetch metrics from the ZKsync ecosystem and ZK chains from L1 RPC (Ether
 This repository is a monorepo consisting of 4 packages and 1 app:
 
 -   [`@zkchainhub/shared`](./packages/shared): A library for shared configurations, constants, types, etc.
--   [`@zkchainhub/providers`](./packages/providers): A library that provides abstracted services over Viem providers to query blockchain data
+-   [`@zkchainhub/chain-providers`](./packages/chain-providers): A library that provides abstracted services over Viem providers to query blockchain data
 -   [`@zkchainhub/pricing`](./packages/pricing): An extensible library that provides Pricing services to fetch token prices. Currently, only Coingecko provider is developed
 -   [`@zkchainhub/metrics`](./packages/metrics): A library that provides different aggregated metrics from the ZKsync ecosystem and ZK chains.
 -   [`@zkchainhub/api`](./apps/api): An Express server that exposes an API where you can fetch information about ZKsync ecosystem and their chains, using the before mentioned libraries

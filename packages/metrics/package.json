@@ -18,7 +18,7 @@
     "dependencies": {
         "@zkchainhub/shared": "workspace:*",
         "@zkchainhub/pricing": "workspace:*",
-        "@zkchainhub/providers": "workspace:*",
+        "@zkchainhub/chain-providers": "workspace:*",
         "viem": "2.19.6"
     }
 }

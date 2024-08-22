@@ -19,7 +19,7 @@
     "dependencies": {
         "@zkchainhub/metrics": "workspace:*",
         "@zkchainhub/pricing": "workspace:*",
-        "@zkchainhub/providers": "workspace:*",
+        "@zkchainhub/chain-providers": "workspace:*",
         "@zkchainhub/shared": "workspace:*",
         "bignumber.js": "9.1.2",
         "cache-manager": "5.7.6",

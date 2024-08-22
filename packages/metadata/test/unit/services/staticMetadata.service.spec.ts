@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, expectTypeOf, it } from "vitest";
 
 import { Token, TokenType, ZKChainMetadata } from "@zkchainhub/shared";
 
-import { StaticMetadataService } from "../../../src/internal.js";
+import { StaticMetadataProvider } from "../../../src/internal.js";
 
-describe("StaticMetadataService", () => {
-    let metadataService: StaticMetadataService;
+describe("StaticMetadataProvider", () => {
+    let metadataService: StaticMetadataProvider;
 
     beforeEach(() => {
-        metadataService = new StaticMetadataService();
+        metadataService = new StaticMetadataProvider();
     });
 
     describe("getChainsMetadata", () => {

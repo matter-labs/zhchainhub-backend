@@ -3,7 +3,7 @@ import axios, { AxiosInstance, isAxiosError } from "axios";
 
 import { BASE_CURRENCY, Cache, ILogger } from "@zkchainhub/shared";
 
-import type { IPricingService, TokenPrices } from "../internal.js";
+import type { IPricingProvider, TokenPrices } from "../internal.js";
 import { ApiNotAvailable, RateLimitExceeded } from "../internal.js";
 
 export const AUTH_HEADER = (type: "demo" | "pro") =>
@@ -21,7 +21,7 @@ interface CoingeckoOptions {
  * Service for fetching token prices from Coingecko API.
  * Prices are always denominated in USD.
  */
-export class CoingeckoService implements IPricingService {
+export class CoingeckoProvider implements IPricingProvider {
     private readonly axios: AxiosInstance;
 
     /**

@@ -1,8 +1,8 @@
 import { Token, TokenType, ZKChainMetadata } from "@zkchainhub/shared";
 
-import { IMetadataService } from "../interfaces/index.js";
+import { IMetadataProvider } from "../interfaces/index.js";
 
-export class GithubMetadataService implements IMetadataService {
+export class GithubMetadataProvider implements IMetadataProvider {
     async getChainsMetadata(): Promise<ZKChainMetadata> {
         //TODO: Implement this method
         throw new Error("Method not implemented.");

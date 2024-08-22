@@ -12,12 +12,12 @@ import { GetL1BatchDetailsReturnType, PublicActionsL2, publicActionsL2 } from "v
 import { ILogger } from "@zkchainhub/shared";
 
 import { InvalidArgumentException } from "../internal.js";
-import { EvmProviderService } from "./evmProvider.service.js";
+import { EvmProvider } from "./evmProvider.service.js";
 
 /**
  * Acts as a wrapper around Viem library to provide methods to interact with ZK chains.
  */
-export class ZKChainProviderService extends EvmProviderService {
+export class ZKChainProvider extends EvmProvider {
     private zkClient: Client<
         FallbackTransport<HttpTransport[]>,
         Chain,

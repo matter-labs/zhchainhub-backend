@@ -5,11 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ILogger } from "@zkchainhub/shared";
 
-import {
-    InvalidArgumentException,
-    RpcUrlsEmpty,
-    ZKChainProviderService,
-} from "../../../src/internal.js";
+import { InvalidArgumentException, RpcUrlsEmpty, ZKChainProvider } from "../../../src/internal.js";
 
 export const mockLogger: ILogger = {
     info: vi.fn(),
@@ -18,8 +14,8 @@ export const mockLogger: ILogger = {
     debug: vi.fn(),
 };
 
-describe("ZKChainProviderService", () => {
-    let zkProvider: ZKChainProviderService;
+describe("ZKChainProvider", () => {
+    let zkProvider: ZKChainProvider;
     const defaultMockChain = localhost;
     const defaultRpcUrls = ["http://localhost:8545"];
 
@@ -28,19 +24,19 @@ describe("ZKChainProviderService", () => {
     });
 
     it("has a zkclient property defined", () => {
-        zkProvider = new ZKChainProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+        zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
         expect(zkProvider["zkClient"]).toBeDefined();
     });
 
     it("throws RpcUrlsEmpty error if rpcUrls is empty", () => {
         expect(() => {
-            new ZKChainProviderService([], localhost, mockLogger);
+            new ZKChainProvider([], localhost, mockLogger);
         }).toThrowError(RpcUrlsEmpty);
     });
 
     describe("avgBlockTime", () => {
         it("should return the average block time over the given range", async () => {
-            zkProvider = new ZKChainProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const currentBlockNumber = 1000;
             const range = 100;
             const currentBlockTimestamp = { timestamp: BigInt(123234345) };
@@ -68,7 +64,7 @@ describe("ZKChainProviderService", () => {
         });
 
         it("should throw an InvalidArgumentException if the range is less than 1", async () => {
-            zkProvider = new ZKChainProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             await expect(zkProvider.avgBlockTime(0)).rejects.toThrowError(
                 new InvalidArgumentException("range for avgBlockTime should be >= 1"),
             );
@@ -77,7 +73,7 @@ describe("ZKChainProviderService", () => {
 
     describe("tps", () => {
         it("should return the transactions per second (TPS)", async () => {
-            zkProvider = new ZKChainProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const currentBatchNumber = 1000; // 1000 in hexadecimal
             const currentBatchDetails = { l2TxCount: 200, timestamp: 123234345 };
             const prevBatchDetails = { timestamp: 123123123 };
@@ -103,7 +99,7 @@ describe("ZKChainProviderService", () => {
         });
 
         it("should handle the case when there are no transactions", async () => {
-            zkProvider = new ZKChainProviderService(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
             const currentBatchNumber = 1000; // 1000 in hexadecimal
             const currentBatchDetails = { l2TxCount: 0, timestamp: 123234345 };
             const prevBatchDetails = { timestamp: 123123123 };

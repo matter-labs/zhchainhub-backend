@@ -2,10 +2,10 @@ import { inspect } from "util";
 import { caching } from "cache-manager";
 
 import { L1MetricsService } from "@zkchainhub/metrics";
-import { CoingeckoService } from "@zkchainhub/pricing";
-import { EvmProviderService } from "@zkchainhub/providers";
+import { CoingeckoProvider } from "@zkchainhub/pricing";
 import { Logger } from "@zkchainhub/shared";
 
+import { EvmProvider } from "../../../packages/chain-providers/dist/src/index.js";
 import { App } from "./app.js";
 import { config } from "./common/config/index.js";
 import { MetricsController, MetricsRouter } from "./metrics/index.js";
@@ -18,8 +18,8 @@ const main = async (): Promise<void> => {
         ttl: config.pricing.cacheOptions.ttl * 1000 /*milliseconds*/,
     });
 
-    const evmProvider = new EvmProviderService(config.l1.rpcUrls, config.l1.chain, logger);
-    const pricingProvider = new CoingeckoService(
+    const evmProvider = new EvmProvider(config.l1.rpcUrls, config.l1.chain, logger);
+    const pricingProvider = new CoingeckoProvider(
         {
             apiBaseUrl: config.pricing.pricingOptions.apiBaseUrl,
             apiKey: config.pricing.pricingOptions.apiKey,

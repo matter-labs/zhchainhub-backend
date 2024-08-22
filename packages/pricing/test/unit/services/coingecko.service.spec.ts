@@ -5,7 +5,7 @@ import { BASE_CURRENCY, Cache, ILogger } from "@zkchainhub/shared";
 
 import {
     ApiNotAvailable,
-    CoingeckoService,
+    CoingeckoProvider,
     DECIMALS_PRECISION,
     RateLimitExceeded,
     TokenPrices,
@@ -45,12 +45,12 @@ function mockServices({
         debug: vi.fn(),
     };
 
-    const service = new CoingeckoService({ apiKey, apiBaseUrl, apiType }, mockCache, mockLogger);
+    const service = new CoingeckoProvider({ apiKey, apiBaseUrl, apiType }, mockCache, mockLogger);
 
     return { service, mockCache, mockLogger };
 }
 
-describe("CoingeckoService", () => {
+describe("CoingeckoProvider", () => {
     const apiKey = "COINGECKO_API_KEY";
     const apiBaseUrl = "https://api.coingecko.com/api/v3/";
     const apiType = "demo";

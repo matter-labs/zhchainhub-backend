@@ -1,8 +1,8 @@
 import { Token, tokens, TokenType, ZKChainMetadata, zkChainsMetadata } from "@zkchainhub/shared";
 
-import { IMetadataService } from "../interfaces/index.js";
+import { IMetadataProvider } from "../interfaces/index.js";
 
-export class StaticMetadataService implements IMetadataService {
+export class StaticMetadataProvider implements IMetadataProvider {
     async getChainsMetadata(): Promise<ZKChainMetadata> {
         return structuredClone(zkChainsMetadata);
     }

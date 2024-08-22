@@ -5,4 +5,4 @@ export {
     RpcUrlsEmpty,
 } from "./internal.js";
 
-export { EvmProviderService, ZKChainProviderService } from "./internal.js";
+export { EvmProvider, ZKChainProvider } from "./internal.js";

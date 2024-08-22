@@ -76,15 +76,15 @@ importers:
 
     apps/api:
         dependencies:
+            "@zkchainhub/chain-providers":
+                specifier: workspace:*
+                version: link:../../packages/chain-providers
             "@zkchainhub/metrics":
                 specifier: workspace:*
                 version: link:../../packages/metrics
             "@zkchainhub/pricing":
                 specifier: workspace:*
                 version: link:../../packages/pricing
-            "@zkchainhub/providers":
-                specifier: workspace:*
-                version: link:../../packages/providers
             "@zkchainhub/shared":
                 specifier: workspace:*
                 version: link:../../packages/shared
@@ -129,6 +129,18 @@ importers:
                 specifier: 4.17.0
                 version: 4.17.0
 
+    packages/chain-providers:
+        dependencies:
+            "@zkchainhub/shared":
+                specifier: workspace:*
+                version: link:../shared
+            abitype:
+                specifier: 1.0.6
+                version: 1.0.6(typescript@5.1.3)(zod@3.23.8)
+            viem:
+                specifier: 2.19.6
+                version: 2.19.6(typescript@5.1.3)(zod@3.23.8)
+
     packages/metadata:
         dependencies:
             "@zkchainhub/shared":
@@ -137,12 +149,12 @@ importers:
 
     packages/metrics:
         dependencies:
+            "@zkchainhub/chain-providers":
+                specifier: workspace:*
+                version: link:../chain-providers
             "@zkchainhub/pricing":
                 specifier: workspace:*
                 version: link:../pricing
-            "@zkchainhub/providers":
-                specifier: workspace:*
-                version: link:../providers
             "@zkchainhub/shared":
                 specifier: workspace:*
                 version: link:../shared
@@ -162,18 +174,6 @@ importers:
             axios-mock-adapter:
                 specifier: 2.0.0
                 version: 2.0.0(axios@1.7.4)
-
-    packages/providers:
-        dependencies:
-            "@zkchainhub/shared":
-                specifier: workspace:*
-                version: link:../shared
-            abitype:
-                specifier: 1.0.6
-                version: 1.0.6(typescript@5.1.3)(zod@3.23.8)
-            viem:
-                specifier: 2.19.6
-                version: 2.19.6(typescript@5.1.3)(zod@3.23.8)
 
     packages/shared:
         dependencies:

@@ -11,8 +11,7 @@ import {
     zeroAddress,
 } from "viem";
 
-import { IPricingService } from "@zkchainhub/pricing";
-import { EvmProviderService } from "@zkchainhub/providers";
+import { IPricingProvider } from "@zkchainhub/pricing";
 import {
     BatchesInfo,
     ChainId,
@@ -28,6 +27,7 @@ import {
     WETH,
 } from "@zkchainhub/shared";
 
+import { EvmProvider } from "../../../chain-providers/dist/src/index.js";
 import {
     AssetTvl,
     bridgeHubAbi,
@@ -56,8 +56,8 @@ export class L1MetricsService {
         private readonly bridgeHubAddress: Address,
         private readonly sharedBridgeAddress: Address,
         private readonly stateTransitionManagerAddresses: Address[],
-        private readonly evmProviderService: EvmProviderService,
-        private readonly pricingService: IPricingService,
+        private readonly evmProviderService: EvmProvider,
+        private readonly pricingService: IPricingProvider,
         private readonly logger: ILogger,
     ) {}
 

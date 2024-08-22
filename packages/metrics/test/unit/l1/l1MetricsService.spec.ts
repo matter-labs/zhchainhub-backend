@@ -1,8 +1,7 @@
 import { Address, encodeFunctionData, erc20Abi, parseEther, zeroAddress } from "viem";
 import { afterEach, describe, expect, it, Mocked, vi } from "vitest";
 
-import { IPricingService } from "@zkchainhub/pricing";
-import { EvmProviderService, MulticallNotFound } from "@zkchainhub/providers";
+import { IPricingProvider } from "@zkchainhub/pricing";
 import {
     BatchesInfo,
     ChainId,
@@ -16,6 +15,7 @@ import {
     WETH,
 } from "@zkchainhub/shared";
 
+import { EvmProvider, MulticallNotFound } from "../../../../chain-providers/dist/src/index.js";
 import {
     bridgeHubAbi,
     diamondProxyAbi,
@@ -97,7 +97,7 @@ const mockMetricsModule = (
     mockedSharedBridgeAddress: Address,
     mockedSTMAddresses: Address[],
 ) => {
-    const evmProviderService = {
+    const evmProvider = {
         getBlockNumber: vi.fn(),
         estimateGas: vi.fn(),
         getGasPrice: vi.fn(),
@@ -108,8 +108,8 @@ const mockMetricsModule = (
         getStorageAt: vi.fn(),
         getBlockByNumber: vi.fn(),
         batchRequest: vi.fn(),
-    } as unknown as EvmProviderService;
-    const pricingService: Mocked<IPricingService> = {
+    } as unknown as EvmProvider;
+    const pricingService: Mocked<IPricingProvider> = {
         getTokenPrices: vi.fn(),
     };
 
@@ -123,12 +123,12 @@ const mockMetricsModule = (
         mockedBridgeHubAddress,
         mockedSharedBridgeAddress,
         mockedSTMAddresses,
-        evmProviderService as EvmProviderService,
+        evmProvider as EvmProvider,
         pricingService,
         mockLogger,
     );
 
-    return { l1Metrics, pricingService, evmProviderService };
+    return { l1Metrics, pricingService, evmProvider };
 };
 
 describe("l1Metrics", () => {
@@ -167,7 +167,7 @@ describe("l1Metrics", () => {
 
     describe("l1Tvl", () => {
         it("return the TVL on L1 Shared Bridge", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -180,8 +180,8 @@ describe("l1Metrics", () => {
             const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
             const multicallAddress = "0x123452";
 
-            vi.spyOn(evmProviderService, "getMulticall3Address").mockReturnValue(multicallAddress);
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue(mockMulticallBalances);
+            vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue(multicallAddress);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockMulticallBalances);
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue(mockPrices);
 
             const result = await l1Metrics.l1Tvl();
@@ -225,7 +225,7 @@ describe("l1Metrics", () => {
                     decimals: 8,
                 },
             ]);
-            expect(evmProviderService.multicall).toHaveBeenCalledWith({
+            expect(evmProvider.multicall).toHaveBeenCalledWith({
                 contracts: [
                     {
                         address: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -253,25 +253,23 @@ describe("l1Metrics", () => {
                 "usd-coin",
                 "wrapped-bitcoin",
             ]);
-            expect(evmProviderService.getBalance).not.toHaveBeenCalled();
+            expect(evmProvider.getBalance).not.toHaveBeenCalled();
         });
 
         it("return the TVL on L1 Shared Bridge without multicall", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
 
-            vi.spyOn(evmProviderService, "getMulticall3Address").mockReturnValue(undefined);
-            vi.spyOn(evmProviderService, "multicall").mockRejectedValue(MulticallNotFound);
-            vi.spyOn(evmProviderService, "readContract")
+            vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue(undefined);
+            vi.spyOn(evmProvider, "multicall").mockRejectedValue(MulticallNotFound);
+            vi.spyOn(evmProvider, "readContract")
                 .mockResolvedValueOnce(60_841_657_140641n)
                 .mockResolvedValueOnce(135_63005559n);
-            vi.spyOn(evmProviderService, "getBalance").mockResolvedValue(
-                123_803_824374847279970609n,
-            );
+            vi.spyOn(evmProvider, "getBalance").mockResolvedValue(123_803_824374847279970609n);
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue(mockPrices);
 
             const result = await l1Metrics.l1Tvl();
@@ -315,24 +313,22 @@ describe("l1Metrics", () => {
                     decimals: 8,
                 },
             ]);
-            expect(evmProviderService.multicall).not.toHaveBeenCalled();
-            expect(evmProviderService.readContract).toHaveBeenNthCalledWith(
+            expect(evmProvider.multicall).not.toHaveBeenCalled();
+            expect(evmProvider.readContract).toHaveBeenNthCalledWith(
                 1,
                 "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
                 erc20Abi,
                 "balanceOf",
                 [l1Metrics["sharedBridgeAddress"]],
             );
-            expect(evmProviderService.readContract).toHaveBeenNthCalledWith(
+            expect(evmProvider.readContract).toHaveBeenNthCalledWith(
                 2,
                 "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
                 erc20Abi,
                 "balanceOf",
                 [l1Metrics["sharedBridgeAddress"]],
             );
-            expect(evmProviderService.getBalance).toHaveBeenCalledWith(
-                l1Metrics["sharedBridgeAddress"],
-            );
+            expect(evmProvider.getBalance).toHaveBeenCalledWith(l1Metrics["sharedBridgeAddress"]);
             expect(pricingService.getTokenPrices).toHaveBeenCalledWith([
                 "ethereum",
                 "usd-coin",
@@ -341,30 +337,30 @@ describe("l1Metrics", () => {
         });
 
         it("throws an error if the balances length is invalid", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            vi.spyOn(evmProviderService, "getMulticall3Address").mockReturnValue("0x123452");
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue([]);
+            vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue("0x123452");
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue([]);
 
             await expect(l1Metrics.l1Tvl()).rejects.toThrowError("Invalid balances length");
         });
 
         it("throws an error if the prices length is invalid", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
 
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue([
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue([
                 60_841_657_140641n,
                 135_63005559n,
                 123_803_824374847279970609n,
             ]);
-            vi.spyOn(evmProviderService, "getMulticall3Address").mockReturnValue("0x123452");
+            vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue("0x123452");
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue({
                 ethereum: 3_181.09,
                 "usd-coin": 0.999,
@@ -376,7 +372,7 @@ describe("l1Metrics", () => {
 
     describe("getBatchesInfo", () => {
         it("returns batches info for chain id", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -392,14 +388,12 @@ describe("l1Metrics", () => {
                 mockBatchesInfo.executed,
             ];
 
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue(
-                batchesInfoMulticallResponse,
-            );
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(batchesInfoMulticallResponse);
 
             const result = await l1Metrics.getBatchesInfo(chainId);
 
             expect(result).toEqual(mockBatchesInfo);
-            expect(evmProviderService.multicall).toHaveBeenCalledWith({
+            expect(evmProvider.multicall).toHaveBeenCalledWith({
                 contracts: [
                     {
                         address: mockedDiamondProxyAddress,
@@ -425,19 +419,19 @@ describe("l1Metrics", () => {
         });
 
         it("throws if chainId doesn't exist on the ecosystem", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             const chainId = 324n; // this is ZKsyncEra chain id
             l1Metrics["diamondContracts"].clear();
-            vi.spyOn(evmProviderService, "readContract").mockResolvedValue(zeroAddress);
+            vi.spyOn(evmProvider, "readContract").mockResolvedValue(zeroAddress);
             await expect(l1Metrics.getBatchesInfo(chainId)).rejects.toThrow(InvalidChainId);
         });
 
         it("fetches and sets diamond proxy if chainId doesn't exists on map", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -454,24 +448,20 @@ describe("l1Metrics", () => {
                 mockBatchesInfo.executed,
             ];
 
-            vi.spyOn(evmProviderService, "readContract").mockResolvedValue(
-                mockedDiamondProxyAddress,
-            );
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue(
-                batchesInfoMulticallResponse,
-            );
+            vi.spyOn(evmProvider, "readContract").mockResolvedValue(mockedDiamondProxyAddress);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(batchesInfoMulticallResponse);
             const result = await l1Metrics.getBatchesInfo(chainId);
 
             expect(result).toEqual(mockBatchesInfo);
 
             expect(l1Metrics["diamondContracts"].get(chainId)).toEqual(mockedDiamondProxyAddress);
-            expect(evmProviderService.readContract).toHaveBeenCalledWith(
+            expect(evmProvider.readContract).toHaveBeenCalledWith(
                 l1Metrics["bridgeHubAddress"],
                 bridgeHubAbi,
                 "getHyperchain",
                 [chainId],
             );
-            expect(evmProviderService.multicall).toHaveBeenCalledWith({
+            expect(evmProvider.multicall).toHaveBeenCalledWith({
                 contracts: [
                     {
                         address: mockedDiamondProxyAddress,
@@ -499,7 +489,7 @@ describe("l1Metrics", () => {
 
     describe("fetchDiamondProxyAddress", () => {
         it("returns address if already exists in the map", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -509,7 +499,7 @@ describe("l1Metrics", () => {
             l1Metrics["diamondContracts"].clear();
             l1Metrics["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
 
-            const readContractSpy = vi.spyOn(evmProviderService, "readContract");
+            const readContractSpy = vi.spyOn(evmProvider, "readContract");
             const result = await l1Metrics["fetchDiamondProxyAddress"](chainId);
 
             expect(result).toEqual(mockedDiamondProxyAddress);
@@ -517,7 +507,7 @@ describe("l1Metrics", () => {
             expect(readContractSpy).toHaveBeenCalledTimes(0);
         });
         it("fetches and sets diamond proxy if chainId doesn't exists on map", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -527,15 +517,13 @@ describe("l1Metrics", () => {
 
             l1Metrics["diamondContracts"].clear();
 
-            vi.spyOn(evmProviderService, "readContract").mockResolvedValue(
-                mockedDiamondProxyAddress,
-            );
+            vi.spyOn(evmProvider, "readContract").mockResolvedValue(mockedDiamondProxyAddress);
             const result = await l1Metrics["fetchDiamondProxyAddress"](chainId);
 
             expect(result).toEqual(mockedDiamondProxyAddress);
 
             expect(l1Metrics["diamondContracts"].get(chainId)).toEqual(mockedDiamondProxyAddress);
-            expect(evmProviderService.readContract).toHaveBeenCalledWith(
+            expect(evmProvider.readContract).toHaveBeenCalledWith(
                 l1Metrics["bridgeHubAddress"],
                 bridgeHubAbi,
                 "getHyperchain",
@@ -546,7 +534,7 @@ describe("l1Metrics", () => {
 
     describe("tvl", () => {
         it("return the TVL for chain id", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -555,7 +543,7 @@ describe("l1Metrics", () => {
             const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
             const chainId = 324n; // this is ZKsyncEra chain id
 
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue(mockBalances);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockBalances);
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue(mockPrices);
 
             const result = await l1Metrics.tvl(chainId);
@@ -599,7 +587,7 @@ describe("l1Metrics", () => {
                     decimals: 8,
                 },
             ]);
-            expect(evmProviderService.multicall).toHaveBeenCalledWith({
+            expect(evmProvider.multicall).toHaveBeenCalledWith({
                 contracts: [
                     {
                         address: l1Metrics["sharedBridgeAddress"],
@@ -630,13 +618,13 @@ describe("l1Metrics", () => {
         });
 
         it("throws an error if the prices length is invalid", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             const chainId = 324n;
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue([
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue([
                 60_841_657_140641n,
                 135_63005559n,
                 123_803_824374847279970609n,
@@ -652,7 +640,7 @@ describe("l1Metrics", () => {
 
     describe("chainType", () => {
         it("returns chainType", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -663,9 +651,7 @@ describe("l1Metrics", () => {
             l1Metrics["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
             const mockChainType: ChainType = "Rollup";
 
-            const readContractSpy = vi
-                .spyOn(evmProviderService, "readContract")
-                .mockResolvedValue(0);
+            const readContractSpy = vi.spyOn(evmProvider, "readContract").mockResolvedValue(0);
 
             const result = await l1Metrics.chainType(chainId);
 
@@ -678,7 +664,7 @@ describe("l1Metrics", () => {
             );
         });
         it("returns chainType", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -689,9 +675,7 @@ describe("l1Metrics", () => {
             l1Metrics["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
             const mockChainType: ChainType = "Validium";
 
-            const readContractSpy = vi
-                .spyOn(evmProviderService, "readContract")
-                .mockResolvedValue(1);
+            const readContractSpy = vi.spyOn(evmProvider, "readContract").mockResolvedValue(1);
 
             const result = await l1Metrics.chainType(chainId);
 
@@ -704,7 +688,7 @@ describe("l1Metrics", () => {
             );
         });
         it("throws if blockchain returns an out of bounds index", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -714,7 +698,7 @@ describe("l1Metrics", () => {
 
             l1Metrics["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
 
-            vi.spyOn(evmProviderService, "readContract").mockResolvedValue(100);
+            vi.spyOn(evmProvider, "readContract").mockResolvedValue(100);
 
             await expect(l1Metrics.chainType(chainId)).rejects.toThrowError(InvalidChainType);
         });
@@ -722,16 +706,16 @@ describe("l1Metrics", () => {
 
     describe("ethGasInfo", () => {
         it("returns gas information from L1", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             // Mock the necessary dependencies
-            const mockEstimateGas = vi.spyOn(evmProviderService, "estimateGas");
+            const mockEstimateGas = vi.spyOn(evmProvider, "estimateGas");
             mockEstimateGas.mockResolvedValueOnce(BigInt(21000)); // ethTransferGasCost
             mockEstimateGas.mockResolvedValueOnce(BigInt(65000)); // erc20TransferGasCost'
-            const mockGetGasPrice = vi.spyOn(evmProviderService, "getGasPrice");
+            const mockGetGasPrice = vi.spyOn(evmProvider, "getGasPrice");
             mockGetGasPrice.mockResolvedValueOnce(BigInt(50000000000)); // gasPrice
 
             const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
@@ -770,16 +754,16 @@ describe("l1Metrics", () => {
         });
 
         it("returns gas information from L1 without ether price", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            const mockEstimateGas = vi.spyOn(evmProviderService, "estimateGas");
+            const mockEstimateGas = vi.spyOn(evmProvider, "estimateGas");
             mockEstimateGas.mockResolvedValueOnce(BigInt(21000)); // ethTransferGasCost
             mockEstimateGas.mockResolvedValueOnce(BigInt(65000)); // erc20TransferGasCost
 
-            const mockGetGasPrice = vi.spyOn(evmProviderService, "getGasPrice");
+            const mockGetGasPrice = vi.spyOn(evmProvider, "getGasPrice");
             mockGetGasPrice.mockResolvedValueOnce(BigInt(50000000000)); // gasPrice
 
             const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
@@ -817,16 +801,16 @@ describe("l1Metrics", () => {
         });
 
         it("throws l1MetricsException when estimateGas fails", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             // Mock the necessary dependencies
-            const mockEstimateGas = vi.spyOn(evmProviderService, "estimateGas");
+            const mockEstimateGas = vi.spyOn(evmProvider, "estimateGas");
             mockEstimateGas.mockRejectedValueOnce(new Error("Failed to estimate gas"));
 
-            const mockGetGasPrice = vi.spyOn(evmProviderService, "getGasPrice");
+            const mockGetGasPrice = vi.spyOn(evmProvider, "getGasPrice");
             mockGetGasPrice.mockResolvedValueOnce(BigInt(50000000000)); // gasPrice
 
             const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
@@ -846,17 +830,17 @@ describe("l1Metrics", () => {
         });
 
         it("throws l1MetricsException when getGasPrice fails", async () => {
-            const { l1Metrics, evmProviderService, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             // Mock the necessary dependencies
-            const mockEstimateGas = vi.spyOn(evmProviderService, "estimateGas");
+            const mockEstimateGas = vi.spyOn(evmProvider, "estimateGas");
             mockEstimateGas.mockResolvedValueOnce(BigInt(21000)); // ethTransferGasCost
             mockEstimateGas.mockResolvedValueOnce(BigInt(65000)); // erc20TransferGasCost
 
-            const mockGetGasPrice = vi.spyOn(evmProviderService, "getGasPrice");
+            const mockGetGasPrice = vi.spyOn(evmProvider, "getGasPrice");
             mockGetGasPrice.mockRejectedValueOnce(new Error("Failed to get gas price"));
 
             const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
@@ -890,7 +874,7 @@ describe("l1Metrics", () => {
 
     describe("getChainIds", () => {
         it("returns chainIds", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -899,7 +883,7 @@ describe("l1Metrics", () => {
                 [1n, 2n, 3n],
                 [4n, 5n, 6n],
             ];
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue(mockedMulticallReturnValue);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockedMulticallReturnValue);
 
             const result = await l1Metrics.getChainIds();
 
@@ -933,19 +917,19 @@ describe("l1Metrics", () => {
             expect(result).toEqual(mockedChainIds);
         });
         it("throws if multicall throws", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            vi.spyOn(evmProviderService, "multicall").mockRejectedValue(new Error());
+            vi.spyOn(evmProvider, "multicall").mockRejectedValue(new Error());
             await expect(l1Metrics.getChainIds()).rejects.toThrow(Error);
         });
     });
 
     describe("getBaseTokens", () => {
         it("returns known tokens", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -958,7 +942,7 @@ describe("l1Metrics", () => {
                 throw new Error("ERC20 tokens are not defined");
             }
             const mockedMulticallReturnValue = [knownTokenAddress1, knownTokenAddress2];
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue(mockedMulticallReturnValue);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockedMulticallReturnValue);
             const mockedReturnData: Token<TokenType>[] = [
                 erc20Tokens[knownTokenAddress1 as Address] as Token<"erc20">,
                 erc20Tokens[knownTokenAddress2 as Address] as Token<"erc20">,
@@ -970,7 +954,7 @@ describe("l1Metrics", () => {
         });
 
         it("returns unknown tokens", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -980,7 +964,7 @@ describe("l1Metrics", () => {
                 "0x1234567890123456789012345678901234567123",
                 "0x1234567890123456789012345678901234567345",
             ];
-            vi.spyOn(evmProviderService, "multicall").mockResolvedValue(mockedMulticallReturnValue);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockedMulticallReturnValue);
             const mockedReturnData: Token<TokenType>[] = [
                 {
                     contractAddress: "0x1234567890123456789012345678901234567123",
@@ -1015,30 +999,30 @@ describe("l1Metrics", () => {
             expect(result).toEqual([]);
         });
         it("throws if multicall fails", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             const mockedChainIds: ChainId[] = [1n, 2n];
-            vi.spyOn(evmProviderService, "multicall").mockRejectedValue(new Error());
+            vi.spyOn(evmProvider, "multicall").mockRejectedValue(new Error());
             await expect(l1Metrics.getBaseTokens(mockedChainIds)).rejects.toThrow(Error);
         });
         it("returns eth token", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             const mockedChainIds: ChainId[] = [1n, 2n];
-            vi.spyOn(evmProviderService, "multicall").mockRejectedValue(new Error());
+            vi.spyOn(evmProvider, "multicall").mockRejectedValue(new Error());
             await expect(l1Metrics.getBaseTokens(mockedChainIds)).rejects.toThrow(Error);
         });
     });
 
     describe("feeParams", () => {
         it("should retrieve the fee parameters for a specific chain", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -1059,11 +1043,11 @@ describe("l1Metrics", () => {
             };
 
             l1Metrics["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
-            vi.spyOn(evmProviderService, "getStorageAt").mockResolvedValue(mockFeeParamsRawData);
+            vi.spyOn(evmProvider, "getStorageAt").mockResolvedValue(mockFeeParamsRawData);
 
             const result = await l1Metrics.feeParams(chainId);
 
-            expect(evmProviderService.getStorageAt).toHaveBeenCalledWith(
+            expect(evmProvider.getStorageAt).toHaveBeenCalledWith(
                 mockedDiamondProxyAddress,
                 `0x26`,
             );
@@ -1072,7 +1056,7 @@ describe("l1Metrics", () => {
         });
 
         it("should throw an exception if the fee parameters cannot be retrieved from L1", async () => {
-            const { l1Metrics, evmProviderService } = mockMetricsModule(
+            const { l1Metrics, evmProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -1082,7 +1066,7 @@ describe("l1Metrics", () => {
             const mockedDiamondProxyAddress = "0x1234567890123456789012345678901234567890";
             l1Metrics["diamondContracts"].set(chainId, mockedDiamondProxyAddress);
 
-            vi.spyOn(evmProviderService, "getStorageAt").mockResolvedValue(undefined);
+            vi.spyOn(evmProvider, "getStorageAt").mockResolvedValue(undefined);
 
             await expect(l1Metrics.feeParams(chainId)).rejects.toThrow(L1MetricsServiceException);
         });

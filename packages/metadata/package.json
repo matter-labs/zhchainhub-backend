@@ -1,0 +1,29 @@
+{
+    "name": "@zkchainhub/metadata",
+    "version": "1.0.0",
+    "main": "./dist/src/index.js",
+    "typings": "./dist/src/index.d.ts",
+    "type": "module",
+    "directories": {
+        "src": "src"
+    },
+    "files": [
+        "dist/*",
+        "package.json",
+        "!**/*.tsbuildinfo"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.build.json",
+        "check-types": "tsc --noEmit -p ./tsconfig.json",
+        "clean": "rm -rf dist",
+        "lint": "eslint \"{src,test}/**/*.{js,ts,json}\"",
+        "lint:fix": "pnpm lint --fix",
+        "format": "prettier --check \"{src,test}/**/*.{js,ts,json}\"",
+        "format:fix": "prettier --write \"{src,test}/**/*.{js,ts,json}\"",
+        "test": "vitest run --config vitest.config.ts --passWithNoTests",
+        "test:cov": "vitest run --config vitest.config.ts --coverage"
+    },
+    "dependencies": {
+        "@zkchainhub/shared": "workspace:*"
+    }
+}

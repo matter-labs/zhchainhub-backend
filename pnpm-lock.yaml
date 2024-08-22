@@ -129,6 +129,12 @@ importers:
                 specifier: 4.17.0
                 version: 4.17.0
 
+    packages/metadata:
+        dependencies:
+            "@zkchainhub/shared":
+                specifier: workspace:*
+                version: link:../shared
+
     packages/metrics:
         dependencies:
             "@zkchainhub/pricing":

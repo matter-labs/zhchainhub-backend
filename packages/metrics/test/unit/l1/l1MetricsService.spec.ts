@@ -1,7 +1,7 @@
 import { Address, encodeFunctionData, erc20Abi, parseEther, zeroAddress } from "viem";
 import { afterEach, describe, expect, it, Mocked, vi } from "vitest";
 
-import { EvmProvider, MulticallNotFound } from "@zkchainhub/chain-providers/dist/src/index.js";
+import { EvmProvider, MulticallNotFound } from "@zkchainhub/chain-providers";
 import { IPricingProvider } from "@zkchainhub/pricing";
 import {
     BatchesInfo,

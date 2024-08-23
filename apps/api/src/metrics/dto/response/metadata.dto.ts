@@ -7,7 +7,7 @@ export class ZkChainMetadata {
      * @type {string}
      * @memberof Metadata
      */
-    iconUrl: string;
+    iconUrl?: string;
 
     /**
      * The name of the chain.
@@ -28,7 +28,7 @@ export class ZkChainMetadata {
      * @type {string}
      * @memberof Metadata
      */
-    explorerUrl: string;
+    explorerUrl?: string;
 
     /**
      * The launch date of the chain (timestamp).

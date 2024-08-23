@@ -149,6 +149,16 @@ importers:
             "@zkchainhub/shared":
                 specifier: workspace:*
                 version: link:../shared
+            axios:
+                specifier: 1.7.4
+                version: 1.7.4
+            zod:
+                specifier: 3.23.8
+                version: 3.23.8
+        devDependencies:
+            axios-mock-adapter:
+                specifier: 2.0.0
+                version: 2.0.0(axios@1.7.4)
 
     packages/metrics:
         dependencies:

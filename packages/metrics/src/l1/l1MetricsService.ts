@@ -11,7 +11,7 @@ import {
     zeroAddress,
 } from "viem";
 
-import { EvmProvider } from "@zkchainhub/chain-providers/dist/src/index.js";
+import { EvmProvider } from "@zkchainhub/chain-providers";
 import { IPricingProvider } from "@zkchainhub/pricing";
 import {
     BatchesInfo,

@@ -1,11 +1,11 @@
 import { inspect } from "util";
 import { caching } from "cache-manager";
 
+import { EvmProvider } from "@zkchainhub/chain-providers/dist/src/index.js";
 import { L1MetricsService } from "@zkchainhub/metrics";
 import { CoingeckoProvider } from "@zkchainhub/pricing";
 import { Logger } from "@zkchainhub/shared";
 
-import { EvmProvider } from "../../../packages/chain-providers/dist/src/index.js";
 import { App } from "./app.js";
 import { config } from "./common/config/index.js";
 import { MetricsController, MetricsRouter } from "./metrics/index.js";

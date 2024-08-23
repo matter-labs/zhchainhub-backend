@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { ILogger } from "@zkchainhub/shared";
 
+import { cacheMiddleware } from "../../common/middleware/cache.middleware.js";
 import { BaseRouter } from "../../common/routes/baseRouter.js";
 import { ChainNotFound, MetricsController } from "../index.js";
 
@@ -27,7 +28,7 @@ export class MetricsRouter extends BaseRouter {
          * Retrieves the ecosystem information.
          * @returns {Promise<EcosystemInfo>} The ecosystem information.
          */
-        this.router.get("/ecosystem", async (_req, res, next) => {
+        this.router.get("/ecosystem", cacheMiddleware(), async (_req, res, next) => {
             try {
                 const data = await this.metricsController.getEcosystem();
                 res.json(data);
@@ -42,7 +43,7 @@ export class MetricsRouter extends BaseRouter {
          * @param {number} chainId - The ID of the chain.
          * @returns {Promise<ZKChainInfo>} The chain information.
          */
-        this.router.get("/zkchain/:chainId", async (req, res, next) => {
+        this.router.get("/zkchain/:chainId", cacheMiddleware(), async (req, res, next) => {
             try {
                 const { params } = ChainIdSchema.parse(req);
 

@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { Address } from "viem";
+import { Address, isAddress } from "viem";
 import { mainnet, zksync } from "viem/chains";
 import { z } from "zod";
 
@@ -8,6 +8,16 @@ import { Logger } from "@zkchainhub/shared";
 dotenv.config();
 
 const logger = Logger.getInstance();
+
+const addressArraySchema = z
+    .string()
+    .transform((str) => str.split(","))
+    .refine((addresses) => addresses.every((address) => isAddress(address)), {
+        message: "Must be a comma-separated list of valid Addresses",
+    });
+const addressSchema = z.string().refine((address) => isAddress(address), {
+    message: "Must be a valid Address",
+});
 
 const urlArraySchema = z
     .string()
@@ -18,6 +28,9 @@ const urlArraySchema = z
 
 const validationSchema = z.object({
     PORT: z.coerce.number().positive().default(3000),
+    BRIDGE_HUB_ADDRESS: addressSchema,
+    SHARED_BRIDGE_ADDRESS: addressSchema,
+    STATE_MANAGER_ADDRESSES: addressArraySchema,
     L1_RPC_URLS: urlArraySchema,
     L2_RPC_URLS: z
         .union([z.literal(""), urlArraySchema])
@@ -54,9 +67,9 @@ export const config = {
                   chain: zksync,
               }
             : undefined,
-    bridgeHubAddress: "0x303a465B659cBB0ab36eE643eA362c509EEb5213" as Address,
-    sharedBridgeAddress: "0xD7f9f54194C633F36CCD5F3da84ad4a1c38cB2cB" as Address,
-    stateTransitionManagerAddresses: ["0xc2eE6b6af7d616f6e27ce7F4A451Aedc2b0F5f5C"] as Address[],
+    bridgeHubAddress: envData.BRIDGE_HUB_ADDRESS as Address,
+    sharedBridgeAddress: envData.SHARED_BRIDGE_ADDRESS as Address,
+    stateTransitionManagerAddresses: envData.STATE_MANAGER_ADDRESSES as Address[],
     pricing: {
         cacheOptions: {
             ttl: envData.CACHE_TTL,

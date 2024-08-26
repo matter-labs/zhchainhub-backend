@@ -1,6 +1,8 @@
+import { Token, TokenType } from "@zkchainhub/shared";
+
 export const tokenJsonUrl = "https://example.com/tokens.json";
 export const chainJsonUrl = "https://example.com/chains.json";
-export const mockTokenData = [
+export const mockTokenData: Token<TokenType>[] = [
     {
         name: "Ethereum",
         symbol: "ETH",
@@ -20,7 +22,7 @@ export const mockTokenData = [
         type: "erc20",
         decimals: 18,
     },
-];
+] as const;
 export const mockChainData = [
     {
         chainId: 324,

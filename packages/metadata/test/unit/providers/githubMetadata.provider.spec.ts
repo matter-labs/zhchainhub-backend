@@ -1,7 +1,7 @@
 import MockAdapter from "axios-mock-adapter";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ILogger, ZKChainMetadataItem } from "@zkchainhub/shared";
+import { Cache, ILogger, ZKChainMetadataItem } from "@zkchainhub/shared";
 
 import { FetchError, InvalidSchema } from "../../../src/internal";
 import { GithubMetadataProvider } from "../../../src/providers/githubMetadata.provider";
@@ -19,15 +19,102 @@ const mockLogger: ILogger = {
     debug: vi.fn(),
 };
 
+const mockCache: Cache = {
+    store: {} as any,
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    reset: vi.fn(),
+};
+
 describe("GithubMetadataProvider", () => {
     beforeEach(() => {
         vi.resetAllMocks();
     });
 
     describe("getChainsMetadata", () => {
-        it("should return the chains metadata", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+        it("return the cached chains metadata", async () => {
+            const cachedData = new Map<bigint, ZKChainMetadataItem>([
+                [
+                    324n,
+                    {
+                        chainId: 324n,
+                        name: "ZKsyncERA",
+                        iconUrl: "https://s2.coinmarketcap.com/static/img/coins/64x64/24091.png",
+                        publicRpcs: [
+                            "https://mainnet.era.zksync.io",
+                            "https://zksync.drpc.org",
+                            "https://zksync.meowrpc.com",
+                        ],
+                        explorerUrl: "https://explorer.zksync.io/",
+                        launchDate: 1679626800,
+                        chainType: "Rollup",
+                        baseToken: {
+                            name: "Ethereum",
+                            symbol: "ETH",
+                            coingeckoId: "ethereum",
+                            type: "native",
+                            contractAddress: null,
+                            decimals: 18,
+                            imageUrl:
+                                "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+                        },
+                    },
+                ],
+            ]);
+            vi.spyOn(mockCache, "get").mockResolvedValue(cachedData);
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
+
+            const axiosSpy = vi.spyOn(provider["axios"], "get");
+            const result = await provider.getChainsMetadata();
+
+            expect(axiosSpy).not.toHaveBeenCalled();
+            expect(mockCache.get).toHaveBeenCalledWith("github-metadata-chains");
+            expect(result).toBeInstanceOf(Map);
+            expect(result.size).toBe(1);
+
+            const chain1 = result.get(324n) as ZKChainMetadataItem;
+            expect(chain1).toBeDefined();
+            expect(chain1).toMatchObject({
+                chainId: 324n,
+                name: "ZKsyncERA",
+                iconUrl: "https://s2.coinmarketcap.com/static/img/coins/64x64/24091.png",
+                publicRpcs: [
+                    "https://mainnet.era.zksync.io",
+                    "https://zksync.drpc.org",
+                    "https://zksync.meowrpc.com",
+                ],
+                explorerUrl: "https://explorer.zksync.io/",
+                launchDate: 1679626800,
+                chainType: "Rollup",
+                baseToken: {
+                    name: "Ethereum",
+                    symbol: "ETH",
+                    coingeckoId: "ethereum",
+                    type: "native",
+                    contractAddress: null,
+                    decimals: 18,
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+                },
+            });
+        });
+
+        it("fetches and return the chains metadata", async () => {
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = provider["axios"];
+
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             const axiosGetMock = vi
                 .spyOn(axios, "get")
                 .mockResolvedValueOnce({ data: mockChainData });
@@ -35,6 +122,7 @@ describe("GithubMetadataProvider", () => {
             const result = await provider.getChainsMetadata();
 
             expect(axiosGetMock).toHaveBeenCalledWith(chainJsonUrl);
+            expect(mockCache.set).toHaveBeenCalled();
             expect(result).toBeInstanceOf(Map);
             expect(result.size).toBe(2);
 
@@ -86,9 +174,15 @@ describe("GithubMetadataProvider", () => {
         });
 
         it("should throw an error if the schema is invalid", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = provider["axios"];
 
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             const axiosGetMock = vi
                 .spyOn(axios, "get")
                 .mockResolvedValueOnce({ data: [{ invalid: "data" }] });
@@ -98,9 +192,15 @@ describe("GithubMetadataProvider", () => {
         });
 
         it("should throw an error if the fetch fails with 404 error", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = new MockAdapter(provider["axios"]);
 
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             axios.onGet().replyOnce(404, {
                 data: {},
                 status: 404,
@@ -111,9 +211,15 @@ describe("GithubMetadataProvider", () => {
         });
 
         it("should throw an error if the fetch fails with 500 error", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = new MockAdapter(provider["axios"]);
 
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             axios.onGet().replyOnce(500, {
                 data: {},
                 status: 500,
@@ -125,9 +231,33 @@ describe("GithubMetadataProvider", () => {
     });
 
     describe("getTokensMetadata", () => {
-        it("should return the tokens metadata", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+        it("returns cached tokens metadata", async () => {
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
+            const axiosSpy = vi.spyOn(provider["axios"], "get");
+            vi.spyOn(mockCache, "get").mockResolvedValue(mockTokenData);
+
+            const result = await provider.getTokensMetadata();
+
+            expect(mockCache.get).toHaveBeenCalledWith("github-metadata-tokens");
+            expect(axiosSpy).not.toHaveBeenCalled();
+            expect(result).toEqual(mockTokenData);
+        });
+
+        it("fetches and return the tokens metadata", async () => {
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = provider["axios"];
+
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             const axiosGetMock = vi
                 .spyOn(axios, "get")
                 .mockResolvedValueOnce({ data: mockTokenData });
@@ -135,12 +265,20 @@ describe("GithubMetadataProvider", () => {
             const result = await provider.getTokensMetadata();
 
             expect(axiosGetMock).toHaveBeenCalledWith(tokenJsonUrl);
+            expect(mockCache.set).toHaveBeenCalledWith("github-metadata-tokens", mockTokenData);
             expect(result).toEqual(mockTokenData);
         });
 
         it("should throw an error if the schema is invalid", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = provider["axios"];
+
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             const axiosGetMock = vi
                 .spyOn(axios, "get")
                 .mockResolvedValueOnce({ data: [{ invalid: "data" }] });
@@ -150,9 +288,15 @@ describe("GithubMetadataProvider", () => {
         });
 
         it("should throw an error if the fetch fails with 404 error", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = new MockAdapter(provider["axios"]);
 
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             axios.onGet().replyOnce(404, {
                 data: {},
                 status: 404,
@@ -163,9 +307,15 @@ describe("GithubMetadataProvider", () => {
         });
 
         it("should throw an error if the fetch fails with 500 error", async () => {
-            const provider = new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, mockLogger);
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
             const axios = new MockAdapter(provider["axios"]);
 
+            vi.spyOn(mockCache, "get").mockResolvedValue(undefined);
             axios.onGet().replyOnce(500, {
                 data: {},
                 status: 500,

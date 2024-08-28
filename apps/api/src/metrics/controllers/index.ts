@@ -1,7 +1,8 @@
 import { BigNumber } from "bignumber.js";
 
+import { IMetadataProvider } from "@zkchainhub/metadata";
 import { L1MetricsService } from "@zkchainhub/metrics";
-import { ILogger, zkChainsMetadata } from "@zkchainhub/shared";
+import { ILogger } from "@zkchainhub/shared";
 
 import { EcosystemInfo, ZKChainInfo, ZkChainMetadata } from "../dto/response/index.js";
 import { ChainNotFound } from "../exceptions/index.js";
@@ -9,22 +10,24 @@ import { ChainNotFound } from "../exceptions/index.js";
 export class MetricsController {
     constructor(
         private readonly l1MetricsService: L1MetricsService,
+        private readonly metadataProvider: IMetadataProvider,
         private readonly logger: ILogger,
     ) {}
 
     async getEcosystem(): Promise<EcosystemInfo> {
-        const [l1Tvl, gasInfo, chainIds] = await Promise.all([
+        const [l1Tvl, gasInfo, chainIds, chainsMetadata] = await Promise.all([
             this.l1MetricsService.l1Tvl(),
             this.l1MetricsService.ethGasInfo(),
             this.l1MetricsService.getChainIds(),
+            this.metadataProvider.getChainsMetadata(),
         ]);
 
         const zkChains = await Promise.all(
             chainIds.map(async (chainId) => {
-                const metadata = zkChainsMetadata.get(chainId);
+                const metadata = chainsMetadata.get(chainId);
                 const tvl = (await this.l1MetricsService.tvl(chainId))
                     .reduce((acc, curr) => {
-                        return acc.plus(BigNumber(curr.amountUsd));
+                        return acc.plus(BigNumber(curr.amountUsd || 0));
                     }, new BigNumber(0))
                     .toString();
                 const chainIdStr = chainId.toString();
@@ -62,7 +65,8 @@ export class MetricsController {
 
     async getChain(chainId: number) {
         const chainIdBn = BigInt(chainId);
-        const metadata = zkChainsMetadata.get(chainIdBn);
+        const chainsMetadata = await this.metadataProvider.getChainsMetadata();
+        const metadata = chainsMetadata.get(chainIdBn);
         const ecosystemChainIds = await this.l1MetricsService.getChainIds();
 
         if (!ecosystemChainIds.includes(chainIdBn)) {

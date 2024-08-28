@@ -1,19 +1,18 @@
-import { Address, encodeFunctionData, erc20Abi, parseEther, zeroAddress } from "viem";
+import { Address, erc20Abi, zeroAddress } from "viem";
 import { afterEach, describe, expect, it, Mocked, vi } from "vitest";
 
 import { EvmProvider, MulticallNotFound } from "@zkchainhub/chain-providers";
+import { IMetadataProvider } from "@zkchainhub/metadata";
 import { IPricingProvider } from "@zkchainhub/pricing";
 import {
     BatchesInfo,
     ChainId,
     ChainType,
-    erc20Tokens,
     ETH_TOKEN_ADDRESS,
     ILogger,
     nativeToken,
     Token,
     TokenType,
-    WETH,
 } from "@zkchainhub/shared";
 
 import {
@@ -28,69 +27,45 @@ import {
     sharedBridgeAbi,
 } from "../../../src/internal.js";
 
-const ONE_ETHER = parseEther("1");
-vi.mock("@zkchainhub/shared/", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("@zkchainhub/shared/src/metadata/token")>();
-    return {
-        ...actual,
-        erc20Tokens: {
-            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
-                name: "USDC",
-                symbol: "USDC",
-                contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                coingeckoId: "usd-coin",
-                imageUrl:
-                    "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
-                type: "erc20",
-                decimals: 6,
-            },
-            "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599": {
-                name: "Wrapped BTC",
-                symbol: "WBTC",
-                contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-                coingeckoId: "wrapped-bitcoin",
-                imageUrl:
-                    "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
-                type: "erc20",
-                decimals: 8,
-            },
-        },
-        get tokens() {
-            return [
-                {
-                    name: "Ethereum",
-                    symbol: "ETH",
-                    contractAddress: null,
-                    coingeckoId: "ethereum",
-                    type: "native",
-                    imageUrl:
-                        "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
-                    decimals: 18,
-                },
-                {
-                    name: "USDC",
-                    symbol: "USDC",
-                    contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-                    coingeckoId: "usd-coin",
-                    imageUrl:
-                        "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
-                    type: "erc20",
-                    decimals: 6,
-                },
-                {
-                    name: "Wrapped BTC",
-                    symbol: "WBTC",
-                    contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-                    coingeckoId: "wrapped-bitcoin",
-                    imageUrl:
-                        "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
-                    type: "erc20",
-                    decimals: 8,
-                },
-            ];
-        },
-    };
-});
+const mockTokens: Token<TokenType>[] = [
+    {
+        name: "Ethereum",
+        symbol: "ETH",
+        contractAddress: null,
+        coingeckoId: "ethereum",
+        type: "native",
+        imageUrl:
+            "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+        decimals: 18,
+    },
+    {
+        name: "USDC",
+        symbol: "USDC",
+        contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        coingeckoId: "usd-coin",
+        imageUrl: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
+        type: "erc20",
+        decimals: 6,
+    },
+    {
+        name: "Wrapped BTC",
+        symbol: "WBTC",
+        contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        coingeckoId: "wrapped-bitcoin",
+        imageUrl:
+            "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
+        type: "erc20",
+        decimals: 8,
+    },
+    {
+        name: "Unknown token",
+        symbol: "XYZ",
+        contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
+        coingeckoId: "",
+        type: "erc20",
+        decimals: 18,
+    },
+];
 
 const mockMetricsModule = (
     mockedBridgeHubAddress: Address,
@@ -119,16 +94,22 @@ const mockMetricsModule = (
         error: vi.fn(),
         debug: vi.fn(),
     };
+    const metadataProvider: IMetadataProvider = {
+        getChainsMetadata: vi.fn(),
+        getTokensMetadata: vi.fn(),
+    };
+
     const l1Metrics = new L1MetricsService(
         mockedBridgeHubAddress,
         mockedSharedBridgeAddress,
         mockedSTMAddresses,
         evmProvider as EvmProvider,
         pricingService,
+        metadataProvider,
         mockLogger,
     );
 
-    return { l1Metrics, pricingService, evmProvider };
+    return { l1Metrics, pricingService, evmProvider, metadataProvider };
 };
 
 describe("l1Metrics", () => {
@@ -167,26 +148,35 @@ describe("l1Metrics", () => {
 
     describe("l1Tvl", () => {
         it("return the TVL on L1 Shared Bridge", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
+            const [, usdc, wbtc, unknown] = mockTokens;
             const mockMulticallBalances = [
                 60_841_657_140641n,
                 135_63005559n,
+                0n,
                 123_803_824374847279970609n,
             ]; // Mocked balances
-            const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
+
+            const mockPrices = {
+                [`${wbtc.contractAddress}`]: 66_129,
+                [`${usdc.contractAddress}`]: 0.999,
+                [`${unknown.contractAddress}`]: undefined,
+                [ETH_TOKEN_ADDRESS]: 3_181.09,
+            }; // Mocked prices
             const multicallAddress = "0x123452";
 
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValue(mockTokens);
             vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue(multicallAddress);
             vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockMulticallBalances);
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue(mockPrices);
 
             const result = await l1Metrics.l1Tvl();
 
-            expect(result).toHaveLength(3);
+            expect(result).toHaveLength(4);
             expect(result).toEqual([
                 {
                     amount: "123803.824374847279970609",
@@ -223,6 +213,16 @@ describe("l1Metrics", () => {
                         "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
                     type: "erc20",
                     decimals: 8,
+                },
+                {
+                    amount: "0",
+                    amountUsd: undefined,
+                    price: undefined,
+                    name: "Unknown token",
+                    symbol: "XYZ",
+                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
+                    type: "erc20",
+                    decimals: 18,
                 },
             ]);
             expect(evmProvider.multicall).toHaveBeenCalledWith({
@@ -240,6 +240,12 @@ describe("l1Metrics", () => {
                         args: [mockedSharedBridgeAddress],
                     } as const,
                     {
+                        address: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
+                        abi: erc20Abi,
+                        functionName: "balanceOf",
+                        args: [mockedSharedBridgeAddress],
+                    } as const,
+                    {
                         address: multicallAddress,
                         abi: multicall3Abi,
                         functionName: "getEthBalance",
@@ -249,32 +255,42 @@ describe("l1Metrics", () => {
                 allowFailure: false,
             } as const);
             expect(pricingService.getTokenPrices).toHaveBeenCalledWith([
-                "ethereum",
-                "usd-coin",
-                "wrapped-bitcoin",
+                ETH_TOKEN_ADDRESS,
+                usdc.contractAddress,
+                wbtc.contractAddress,
+                unknown.contractAddress,
             ]);
             expect(evmProvider.getBalance).not.toHaveBeenCalled();
         });
 
         it("return the TVL on L1 Shared Bridge without multicall", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
+            const [, usdc, wbtc, unknown] = mockTokens;
 
+            const mockPrices = {
+                [`${wbtc.contractAddress}`]: 66_129,
+                [`${usdc.contractAddress}`]: 0.999,
+                [`${unknown.contractAddress}`]: undefined,
+                [ETH_TOKEN_ADDRESS]: 3_181.09,
+            }; // Mocked prices
+
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValue(mockTokens);
             vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue(undefined);
             vi.spyOn(evmProvider, "multicall").mockRejectedValue(MulticallNotFound);
             vi.spyOn(evmProvider, "readContract")
                 .mockResolvedValueOnce(60_841_657_140641n)
-                .mockResolvedValueOnce(135_63005559n);
+                .mockResolvedValueOnce(135_63005559n)
+                .mockResolvedValueOnce(0n);
             vi.spyOn(evmProvider, "getBalance").mockResolvedValue(123_803_824374847279970609n);
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue(mockPrices);
 
             const result = await l1Metrics.l1Tvl();
 
-            expect(result).toHaveLength(3);
+            expect(result).toHaveLength(4);
             expect(result).toEqual([
                 {
                     amount: "123803.824374847279970609",
@@ -312,36 +328,55 @@ describe("l1Metrics", () => {
                     type: "erc20",
                     decimals: 8,
                 },
+                {
+                    amount: "0",
+                    amountUsd: undefined,
+                    price: undefined,
+                    name: "Unknown token",
+                    symbol: "XYZ",
+                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
+                    type: "erc20",
+                    decimals: 18,
+                },
             ]);
             expect(evmProvider.multicall).not.toHaveBeenCalled();
             expect(evmProvider.readContract).toHaveBeenNthCalledWith(
                 1,
-                "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                usdc.contractAddress,
                 erc20Abi,
                 "balanceOf",
                 [l1Metrics["sharedBridgeAddress"]],
             );
             expect(evmProvider.readContract).toHaveBeenNthCalledWith(
                 2,
-                "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                wbtc.contractAddress,
+                erc20Abi,
+                "balanceOf",
+                [l1Metrics["sharedBridgeAddress"]],
+            );
+            expect(evmProvider.readContract).toHaveBeenNthCalledWith(
+                3,
+                unknown.contractAddress,
                 erc20Abi,
                 "balanceOf",
                 [l1Metrics["sharedBridgeAddress"]],
             );
             expect(evmProvider.getBalance).toHaveBeenCalledWith(l1Metrics["sharedBridgeAddress"]);
             expect(pricingService.getTokenPrices).toHaveBeenCalledWith([
-                "ethereum",
-                "usd-coin",
-                "wrapped-bitcoin",
+                ETH_TOKEN_ADDRESS,
+                usdc.contractAddress,
+                wbtc.contractAddress,
+                unknown.contractAddress,
             ]);
         });
 
         it("throws an error if the balances length is invalid", async () => {
-            const { l1Metrics, evmProvider } = mockMetricsModule(
+            const { l1Metrics, evmProvider, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValue(mockTokens);
             vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue("0x123452");
             vi.spyOn(evmProvider, "multicall").mockResolvedValue([]);
 
@@ -349,21 +384,25 @@ describe("l1Metrics", () => {
         });
 
         it("throws an error if the prices length is invalid", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
+            const [, usdc, wbtc] = mockTokens;
 
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValue(mockTokens);
             vi.spyOn(evmProvider, "multicall").mockResolvedValue([
                 60_841_657_140641n,
                 135_63005559n,
+                0n,
                 123_803_824374847279970609n,
             ]);
             vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue("0x123452");
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue({
-                ethereum: 3_181.09,
-                "usd-coin": 0.999,
+                [`${wbtc.contractAddress}`]: 66_129,
+                [`${usdc.contractAddress}`]: 0.999,
+                [ETH_TOKEN_ADDRESS]: 3_181.09,
             });
 
             await expect(l1Metrics.l1Tvl()).rejects.toThrowError("Invalid prices length");
@@ -534,21 +573,35 @@ describe("l1Metrics", () => {
 
     describe("tvl", () => {
         it("return the TVL for chain id", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            const mockBalances = [60_841_657_140641n, 135_63005559n, 123_803_824374847279970609n]; // Mocked balances
-            const mockPrices = { "wrapped-bitcoin": 66_129, "usd-coin": 0.999, ethereum: 3_181.09 }; // Mocked prices
+            const [, usdc, wbtc, unknown] = mockTokens;
+            const mockMulticallBalances = [
+                60_841_657_140641n,
+                135_63005559n,
+                0n,
+                123_803_824374847279970609n,
+            ]; // Mocked balances
             const chainId = 324n; // this is ZKsyncEra chain id
+            const mockPrices = {
+                [`${wbtc.contractAddress}`]: 66_129,
+                [`${usdc.contractAddress}`]: 0.999,
+                [`${unknown.contractAddress}`]: undefined,
+                [ETH_TOKEN_ADDRESS]: 3_181.09,
+            }; // Mocked prices
+            const multicallAddress = "0x123452";
 
-            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockBalances);
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValue(mockTokens);
+            vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue(multicallAddress);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockMulticallBalances);
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue(mockPrices);
 
             const result = await l1Metrics.tvl(chainId);
 
-            expect(result).toHaveLength(3);
+            expect(result).toHaveLength(4);
             expect(result).toEqual([
                 {
                     amount: "123803.824374847279970609",
@@ -586,6 +639,16 @@ describe("l1Metrics", () => {
                     type: "erc20",
                     decimals: 8,
                 },
+                {
+                    amount: "0",
+                    amountUsd: undefined,
+                    price: undefined,
+                    name: "Unknown token",
+                    symbol: "XYZ",
+                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
+                    type: "erc20",
+                    decimals: 18,
+                },
             ]);
             expect(evmProvider.multicall).toHaveBeenCalledWith({
                 contracts: [
@@ -605,33 +668,159 @@ describe("l1Metrics", () => {
                         address: l1Metrics["sharedBridgeAddress"],
                         abi: sharedBridgeAbi,
                         functionName: "chainBalance",
+                        args: [chainId, "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599"],
+                    },
+                    {
+                        address: l1Metrics["sharedBridgeAddress"],
+                        abi: sharedBridgeAbi,
+                        functionName: "chainBalance",
                         args: [chainId, ETH_TOKEN_ADDRESS],
                     },
                 ],
                 allowFailure: false,
             });
             expect(pricingService.getTokenPrices).toHaveBeenCalledWith([
-                "ethereum",
-                "usd-coin",
-                "wrapped-bitcoin",
+                ETH_TOKEN_ADDRESS,
+                usdc.contractAddress,
+                wbtc.contractAddress,
+                unknown.contractAddress,
             ]);
         });
 
-        it("throws an error if the prices length is invalid", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
+        it("return the TVL for chain id without multicall", async () => {
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            const chainId = 324n;
+            const [, usdc, wbtc, unknown] = mockTokens;
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const mockPrices = {
+                [`${wbtc.contractAddress}`]: 66_129,
+                [`${usdc.contractAddress}`]: 0.999,
+                [`${unknown.contractAddress}`]: undefined,
+                [ETH_TOKEN_ADDRESS]: 3_181.09,
+            }; // Mocked prices
+
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValue(mockTokens);
+            vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue(undefined);
+            vi.spyOn(evmProvider, "multicall").mockRejectedValue(MulticallNotFound);
+            vi.spyOn(evmProvider, "readContract")
+                .mockResolvedValueOnce(60_841_657_140641n)
+                .mockResolvedValueOnce(135_63005559n)
+                .mockResolvedValueOnce(0n)
+                .mockResolvedValueOnce(123_803_824374847279970609n);
+            vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue(mockPrices);
+
+            const result = await l1Metrics.tvl(chainId);
+
+            expect(result).toHaveLength(4);
+            expect(result).toEqual([
+                {
+                    amount: "123803.824374847279970609",
+                    amountUsd: expect.stringContaining("393831107.68"),
+                    price: "3181.09",
+                    name: "Ethereum",
+                    symbol: "ETH",
+                    contractAddress: null,
+                    type: "native",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+                    decimals: 18,
+                },
+                {
+                    amount: "60841657.140641",
+                    amountUsd: expect.stringContaining("60780815.48"),
+                    price: "0.999",
+                    name: "USDC",
+                    symbol: "USDC",
+                    contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
+                    type: "erc20",
+                    decimals: 6,
+                },
+                {
+                    amount: "135.63005559",
+                    amountUsd: expect.stringContaining("8969079.94"),
+                    price: "66129",
+                    name: "Wrapped BTC",
+                    symbol: "WBTC",
+                    contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
+                    type: "erc20",
+                    decimals: 8,
+                },
+                {
+                    amount: "0",
+                    amountUsd: undefined,
+                    price: undefined,
+                    name: "Unknown token",
+                    symbol: "XYZ",
+                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
+                    type: "erc20",
+                    decimals: 18,
+                },
+            ]);
+            expect(evmProvider.multicall).not.toHaveBeenCalled();
+            expect(evmProvider.readContract).toHaveBeenNthCalledWith(
+                1,
+                l1Metrics["sharedBridgeAddress"],
+                sharedBridgeAbi,
+                "chainBalance",
+                [chainId, usdc.contractAddress],
+            );
+            expect(evmProvider.readContract).toHaveBeenNthCalledWith(
+                2,
+                l1Metrics["sharedBridgeAddress"],
+                sharedBridgeAbi,
+                "chainBalance",
+                [chainId, wbtc.contractAddress],
+            );
+            expect(evmProvider.readContract).toHaveBeenNthCalledWith(
+                3,
+                l1Metrics["sharedBridgeAddress"],
+                sharedBridgeAbi,
+                "chainBalance",
+                [chainId, unknown.contractAddress],
+            );
+            expect(evmProvider.readContract).toHaveBeenNthCalledWith(
+                4,
+                l1Metrics["sharedBridgeAddress"],
+                sharedBridgeAbi,
+                "chainBalance",
+                [chainId, ETH_TOKEN_ADDRESS],
+            );
+            expect(pricingService.getTokenPrices).toHaveBeenCalledWith([
+                ETH_TOKEN_ADDRESS,
+                usdc.contractAddress,
+                wbtc.contractAddress,
+                unknown.contractAddress,
+            ]);
+        });
+
+        it("throws an error if the prices length is invalid", async () => {
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
+                mockedBridgeHubAddress,
+                mockedSharedBridgeAddress,
+                mockedSTMAddresses,
+            );
+            const chainId = 324n; // this is ZKsyncEra chain id
+            const [, usdc, wbtc] = mockTokens;
+
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValue(mockTokens);
             vi.spyOn(evmProvider, "multicall").mockResolvedValue([
                 60_841_657_140641n,
                 135_63005559n,
+                0n,
                 123_803_824374847279970609n,
             ]);
+            vi.spyOn(evmProvider, "getMulticall3Address").mockReturnValue("0x123452");
             vi.spyOn(pricingService, "getTokenPrices").mockResolvedValue({
-                ethereum: 3_181.09,
-                "usd-coin": 0.999,
+                [`${wbtc.contractAddress}`]: 66_129,
+                [`${usdc.contractAddress}`]: 0.999,
+                [ETH_TOKEN_ADDRESS]: 3_181.09,
             });
 
             await expect(l1Metrics.tvl(chainId)).rejects.toThrowError("Invalid prices length");
@@ -706,44 +895,26 @@ describe("l1Metrics", () => {
 
     describe("ethGasInfo", () => {
         it("returns gas information from L1", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             // Mock the necessary dependencies
-            const mockEstimateGas = vi.spyOn(evmProvider, "estimateGas");
-            mockEstimateGas.mockResolvedValueOnce(BigInt(21000)); // ethTransferGasCost
-            mockEstimateGas.mockResolvedValueOnce(BigInt(65000)); // erc20TransferGasCost'
             const mockGetGasPrice = vi.spyOn(evmProvider, "getGasPrice");
             mockGetGasPrice.mockResolvedValueOnce(BigInt(50000000000)); // gasPrice
-
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValueOnce(mockTokens);
             const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
-            mockGetTokenPrices.mockResolvedValueOnce({ [nativeToken.coingeckoId]: 2000 }); // ethPriceInUsd
+            mockGetTokenPrices.mockResolvedValueOnce({ [ETH_TOKEN_ADDRESS]: 2000 }); // ethPriceInUsd
             // Call the method
             const result = await l1Metrics.ethGasInfo();
 
             // Assertions
-            expect(mockEstimateGas).toHaveBeenCalledTimes(2);
-            expect(mockEstimateGas).toHaveBeenNthCalledWith(1, {
-                account: zeroAddress,
-                to: zeroAddress,
-                value: ONE_ETHER,
-            });
-            expect(mockEstimateGas).toHaveBeenNthCalledWith(2, {
-                account: zeroAddress,
-                to: WETH.contractAddress,
-                data: encodeFunctionData({
-                    abi: erc20Abi,
-                    functionName: "transfer",
-                    args: [l1Metrics["sharedBridgeAddress"], ONE_ETHER],
-                }),
-            });
 
             expect(mockGetGasPrice).toHaveBeenCalledTimes(1);
 
             expect(mockGetTokenPrices).toHaveBeenCalledTimes(1);
-            expect(mockGetTokenPrices).toHaveBeenCalledWith([nativeToken.coingeckoId]);
+            expect(mockGetTokenPrices).toHaveBeenCalledWith([ETH_TOKEN_ADDRESS]);
 
             expect(result).toEqual({
                 gasPrice: 50000000000n,
@@ -753,19 +924,16 @@ describe("l1Metrics", () => {
             });
         });
 
-        it("returns gas information from L1 without ether price", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
+        it("returns gas information from L1 without price", async () => {
+            const { l1Metrics, evmProvider, pricingService, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            const mockEstimateGas = vi.spyOn(evmProvider, "estimateGas");
-            mockEstimateGas.mockResolvedValueOnce(BigInt(21000)); // ethTransferGasCost
-            mockEstimateGas.mockResolvedValueOnce(BigInt(65000)); // erc20TransferGasCost
 
             const mockGetGasPrice = vi.spyOn(evmProvider, "getGasPrice");
             mockGetGasPrice.mockResolvedValueOnce(BigInt(50000000000)); // gasPrice
-
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValueOnce(mockTokens);
             const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
             mockGetTokenPrices.mockRejectedValueOnce(new Error("Failed to get token prices"));
 
@@ -778,55 +946,11 @@ describe("l1Metrics", () => {
                 ethTransfer: 21000n,
                 erc20Transfer: 65000n,
             });
-            expect(mockEstimateGas).toHaveBeenCalledTimes(2);
-            expect(mockEstimateGas).toHaveBeenNthCalledWith(1, {
-                account: zeroAddress,
-                to: zeroAddress,
-                value: ONE_ETHER,
-            });
-            expect(mockEstimateGas).toHaveBeenNthCalledWith(2, {
-                account: zeroAddress,
-                to: WETH.contractAddress,
-                data: encodeFunctionData({
-                    abi: erc20Abi,
-                    functionName: "transfer",
-                    args: [l1Metrics["sharedBridgeAddress"], ONE_ETHER],
-                }),
-            });
 
             expect(mockGetGasPrice).toHaveBeenCalledTimes(1);
 
             expect(mockGetTokenPrices).toHaveBeenCalledTimes(1);
-            expect(mockGetTokenPrices).toHaveBeenCalledWith([nativeToken.coingeckoId]);
-        });
-
-        it("throws l1MetricsException when estimateGas fails", async () => {
-            const { l1Metrics, evmProvider, pricingService } = mockMetricsModule(
-                mockedBridgeHubAddress,
-                mockedSharedBridgeAddress,
-                mockedSTMAddresses,
-            );
-            // Mock the necessary dependencies
-            const mockEstimateGas = vi.spyOn(evmProvider, "estimateGas");
-            mockEstimateGas.mockRejectedValueOnce(new Error("Failed to estimate gas"));
-
-            const mockGetGasPrice = vi.spyOn(evmProvider, "getGasPrice");
-            mockGetGasPrice.mockResolvedValueOnce(BigInt(50000000000)); // gasPrice
-
-            const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
-            mockGetTokenPrices.mockResolvedValueOnce({ [nativeToken.coingeckoId]: 2000 }); // ethPriceInUsd
-
-            // Call the method and expect it to throw L1MetricsServiceException
-            await expect(l1Metrics.ethGasInfo()).rejects.toThrow(L1MetricsServiceException);
-
-            // Assertions
-            expect(mockEstimateGas).toHaveBeenCalledWith({
-                account: zeroAddress,
-                to: zeroAddress,
-                value: ONE_ETHER,
-            });
-
-            expect(mockGetTokenPrices).not.toHaveBeenCalled();
+            expect(mockGetTokenPrices).toHaveBeenCalledWith([ETH_TOKEN_ADDRESS]);
         });
 
         it("throws l1MetricsException when getGasPrice fails", async () => {
@@ -849,25 +973,7 @@ describe("l1Metrics", () => {
             // Call the method and expect it to throw l1MetricsException
             await expect(l1Metrics.ethGasInfo()).rejects.toThrow(L1MetricsServiceException);
 
-            // Assertions
-            expect(mockEstimateGas).toHaveBeenCalledTimes(2);
-            expect(mockEstimateGas).toHaveBeenNthCalledWith(1, {
-                account: zeroAddress,
-                to: zeroAddress,
-                value: ONE_ETHER,
-            });
-            expect(mockEstimateGas).toHaveBeenNthCalledWith(2, {
-                account: zeroAddress,
-                to: WETH.contractAddress,
-                data: encodeFunctionData({
-                    abi: erc20Abi,
-                    functionName: "transfer",
-                    args: [l1Metrics["sharedBridgeAddress"], ONE_ETHER],
-                }),
-            });
-
             expect(mockGetGasPrice).toHaveBeenCalledTimes(1);
-
             expect(mockGetTokenPrices).not.toHaveBeenCalled();
         });
     });
@@ -929,32 +1035,30 @@ describe("l1Metrics", () => {
 
     describe("getBaseTokens", () => {
         it("returns known tokens", async () => {
-            const { l1Metrics, evmProvider } = mockMetricsModule(
+            const { l1Metrics, evmProvider, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
             const mockedChainIds = [1n, 2n];
-            const knownTokenAddress1 = Object.keys(erc20Tokens)[0];
-            const knownTokenAddress2 = Object.keys(erc20Tokens)[0];
+            const knownTokenAddress1 = mockTokens[1].contractAddress;
+            const knownTokenAddress2 = mockTokens[1].contractAddress;
 
-            if (!knownTokenAddress1 || !knownTokenAddress2) {
-                throw new Error("ERC20 tokens are not defined");
-            }
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValueOnce(mockTokens);
+
             const mockedMulticallReturnValue = [knownTokenAddress1, knownTokenAddress2];
             vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockedMulticallReturnValue);
             const mockedReturnData: Token<TokenType>[] = [
-                erc20Tokens[knownTokenAddress1 as Address] as Token<"erc20">,
-                erc20Tokens[knownTokenAddress2 as Address] as Token<"erc20">,
+                mockTokens[1] as Token<"erc20">,
+                mockTokens[1] as Token<"erc20">,
             ];
 
             const result = await l1Metrics.getBaseTokens(mockedChainIds);
 
             expect(result).toEqual(mockedReturnData);
         });
-
         it("returns unknown tokens", async () => {
-            const { l1Metrics, evmProvider } = mockMetricsModule(
+            const { l1Metrics, evmProvider, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
@@ -964,6 +1068,45 @@ describe("l1Metrics", () => {
                 "0x1234567890123456789012345678901234567123",
                 "0x1234567890123456789012345678901234567345",
             ];
+
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValueOnce(mockTokens);
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockedMulticallReturnValue);
+            const mockedReturnData: Token<TokenType>[] = [
+                {
+                    contractAddress: "0x1234567890123456789012345678901234567123",
+                    symbol: "unknown",
+                    name: "unknown",
+                    decimals: 18,
+                    type: "erc20",
+                    coingeckoId: "unknown",
+                },
+                {
+                    contractAddress: "0x1234567890123456789012345678901234567345",
+                    symbol: "unknown",
+                    name: "unknown",
+                    decimals: 18,
+                    type: "erc20",
+                    coingeckoId: "unknown",
+                },
+            ];
+
+            const result = await l1Metrics.getBaseTokens(mockedChainIds);
+
+            expect(result).toEqual(mockedReturnData);
+        });
+        it("returns unknown tokens if token metadata is empty", async () => {
+            const { l1Metrics, evmProvider, metadataProvider } = mockMetricsModule(
+                mockedBridgeHubAddress,
+                mockedSharedBridgeAddress,
+                mockedSTMAddresses,
+            );
+            const mockedChainIds = [1n, 2n];
+            const mockedMulticallReturnValue = [
+                "0x1234567890123456789012345678901234567123",
+                "0x1234567890123456789012345678901234567345",
+            ];
+
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValueOnce([]);
             vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockedMulticallReturnValue);
             const mockedReturnData: Token<TokenType>[] = [
                 {
@@ -989,11 +1132,12 @@ describe("l1Metrics", () => {
             expect(result).toEqual(mockedReturnData);
         });
         it("returns empty array if chainIds is empty", async () => {
-            const { l1Metrics } = mockMetricsModule(
+            const { l1Metrics, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValueOnce(mockTokens);
             const mockedChainIds: ChainId[] = [];
             const result = await l1Metrics.getBaseTokens(mockedChainIds);
             expect(result).toEqual([]);
@@ -1009,14 +1153,27 @@ describe("l1Metrics", () => {
             await expect(l1Metrics.getBaseTokens(mockedChainIds)).rejects.toThrow(Error);
         });
         it("returns eth token", async () => {
-            const { l1Metrics, evmProvider } = mockMetricsModule(
+            const { l1Metrics, evmProvider, metadataProvider } = mockMetricsModule(
                 mockedBridgeHubAddress,
                 mockedSharedBridgeAddress,
                 mockedSTMAddresses,
             );
-            const mockedChainIds: ChainId[] = [1n, 2n];
-            vi.spyOn(evmProvider, "multicall").mockRejectedValue(new Error());
-            await expect(l1Metrics.getBaseTokens(mockedChainIds)).rejects.toThrow(Error);
+            const mockedChainIds = [1n, 2n];
+            const knownTokenAddress1 = ETH_TOKEN_ADDRESS;
+            const knownTokenAddress2 = ETH_TOKEN_ADDRESS;
+
+            vi.spyOn(metadataProvider, "getTokensMetadata").mockResolvedValueOnce(mockTokens);
+
+            const mockedMulticallReturnValue = [knownTokenAddress1, knownTokenAddress2];
+            vi.spyOn(evmProvider, "multicall").mockResolvedValue(mockedMulticallReturnValue);
+            const mockedReturnData: Token<TokenType>[] = [
+                mockTokens[0] as Token<"erc20">,
+                mockTokens[0] as Token<"erc20">,
+            ];
+
+            const result = await l1Metrics.getBaseTokens(mockedChainIds);
+
+            expect(result).toEqual(mockedReturnData);
         });
     });
 

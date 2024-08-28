@@ -1,6 +1,7 @@
 import BigNumber from "bignumber.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { IMetadataProvider } from "@zkchainhub/metadata";
 import { AssetTvl, GasInfo, L1MetricsService } from "@zkchainhub/metrics";
 import {
     ChainId,
@@ -8,7 +9,7 @@ import {
     ILogger,
     nativeToken,
     Token,
-    zkChainsMetadata,
+    ZKChainMetadataItem,
 } from "@zkchainhub/shared";
 
 import { MetricsController } from "../../../src/metrics/controllers";
@@ -30,6 +31,7 @@ const mockLogger: ILogger = {
 describe("MetricsController", () => {
     let service: MetricsController;
     let l1MetricsService: L1MetricsService;
+    let metadataProvider: IMetadataProvider;
 
     afterEach(() => {
         vi.restoreAllMocks();
@@ -46,7 +48,11 @@ describe("MetricsController", () => {
             chainType: vi.fn(),
             feeParams: vi.fn(),
         } as unknown as L1MetricsService;
-        service = new MetricsController(l1MetricsService, mockLogger);
+        metadataProvider = {
+            getChainsMetadata: vi.fn(),
+            getTokensMetadata: vi.fn(),
+        };
+        service = new MetricsController(l1MetricsService, metadataProvider, mockLogger);
     });
 
     it("should be defined", () => {
@@ -56,6 +62,7 @@ describe("MetricsController", () => {
 
     describe("getEcosystem", () => {
         it("returns the ecosystem information", async () => {
+            const zkChainsMetadata = new Map<bigint, ZKChainMetadataItem>();
             zkChainsMetadata.set(324n, {
                 chainId: 324n,
                 chainType: "Rollup",
@@ -171,6 +178,7 @@ describe("MetricsController", () => {
                 ethTransfer: 21000n,
             };
 
+            vi.spyOn(metadataProvider, "getChainsMetadata").mockResolvedValue(zkChainsMetadata);
             vi.spyOn(l1MetricsService, "l1Tvl").mockResolvedValue(mockL1Tvl);
             vi.spyOn(l1MetricsService, "ethGasInfo").mockResolvedValue(mockGasInfo);
             vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue(mockChainIds);
@@ -199,7 +207,7 @@ describe("MetricsController", () => {
                     >,
                     tvl: mockZkTvl
                         .reduce((acc, curr) => {
-                            return acc.plus(BigNumber(curr.amountUsd));
+                            return acc.plus(BigNumber(curr.amountUsd || 0));
                         }, new BigNumber(0))
                         .toString(),
                     metadata: new ZkChainMetadata(
@@ -215,7 +223,7 @@ describe("MetricsController", () => {
                     >,
                     tvl: mockZkTvl
                         .reduce((acc, curr) => {
-                            return acc.plus(BigNumber(curr.amountUsd));
+                            return acc.plus(BigNumber(curr.amountUsd || 0));
                         }, new BigNumber(0))
                         .toString(),
                     metadata: new ZkChainMetadata(
@@ -243,7 +251,7 @@ describe("MetricsController", () => {
             expect(l1MetricsService.tvl).toHaveBeenCalledTimes(2);
         });
         it("returns the ecosystem without using metadata", async () => {
-            zkChainsMetadata.clear();
+            const zkChainsMetadata = new Map<bigint, ZKChainMetadataItem>();
             zkChainsMetadata.set(388n, {
                 chainId: 388n,
                 chainType: "Rollup",
@@ -346,6 +354,7 @@ describe("MetricsController", () => {
             };
             const mockedChainType = "Rollup";
 
+            vi.spyOn(metadataProvider, "getChainsMetadata").mockResolvedValue(zkChainsMetadata);
             vi.spyOn(l1MetricsService, "l1Tvl").mockResolvedValue(mockL1Tvl);
             vi.spyOn(l1MetricsService, "ethGasInfo").mockResolvedValue(mockGasInfo);
             vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue(mockChainIds);
@@ -368,7 +377,7 @@ describe("MetricsController", () => {
                     baseToken: nativeToken,
                     tvl: mockZkTvl
                         .reduce((acc, curr) => {
-                            return acc.plus(BigNumber(curr.amountUsd));
+                            return acc.plus(BigNumber(curr.amountUsd || 0));
                         }, new BigNumber(0))
                         .toString(),
                     rpc: false,
@@ -381,7 +390,7 @@ describe("MetricsController", () => {
                     >,
                     tvl: mockZkTvl
                         .reduce((acc, curr) => {
-                            return acc.plus(BigNumber(curr.amountUsd));
+                            return acc.plus(BigNumber(curr.amountUsd || 0));
                         }, new BigNumber(0))
                         .toString(),
                     metadata: new ZkChainMetadata(
@@ -454,6 +463,7 @@ describe("MetricsController", () => {
                 ethTransfer: 21000n,
             };
 
+            vi.spyOn(metadataProvider, "getChainsMetadata").mockResolvedValue(new Map());
             vi.spyOn(l1MetricsService, "l1Tvl").mockResolvedValue(mockL1Tvl);
             vi.spyOn(l1MetricsService, "ethGasInfo").mockResolvedValue(mockGasInfo);
             vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue(mockChainIds);
@@ -535,12 +545,7 @@ describe("MetricsController", () => {
                 minimalL2GasPrice: 2000000000n,
                 priorityTxMaxPubdata: 1000,
             };
-
-            vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue([chainIdBn]);
-            vi.spyOn(l1MetricsService, "tvl").mockResolvedValue(mockZkTvl);
-            vi.spyOn(l1MetricsService, "getBatchesInfo").mockResolvedValue(mockBatchesInfo);
-            vi.spyOn(l1MetricsService, "feeParams").mockResolvedValue(mockFeeParams);
-            vi.spyOn(l1MetricsService, "getBaseTokens").mockResolvedValue([nativeToken]);
+            const zkChainsMetadata = new Map<bigint, ZKChainMetadataItem>();
             zkChainsMetadata.set(chainIdBn, {
                 chainId: 324n,
                 chainType: "Rollup",
@@ -555,6 +560,13 @@ describe("MetricsController", () => {
                 explorerUrl: "https://explorer.zksync.io/",
                 launchDate: 1679626800,
             });
+
+            vi.spyOn(metadataProvider, "getChainsMetadata").mockResolvedValue(zkChainsMetadata);
+            vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue([chainIdBn]);
+            vi.spyOn(l1MetricsService, "tvl").mockResolvedValue(mockZkTvl);
+            vi.spyOn(l1MetricsService, "getBatchesInfo").mockResolvedValue(mockBatchesInfo);
+            vi.spyOn(l1MetricsService, "feeParams").mockResolvedValue(mockFeeParams);
+            vi.spyOn(l1MetricsService, "getBaseTokens").mockResolvedValue([nativeToken]);
 
             const result = await service.getChain(chainId);
 
@@ -636,13 +648,13 @@ describe("MetricsController", () => {
             };
             const mockedChainType = "Rollup";
 
+            vi.spyOn(metadataProvider, "getChainsMetadata").mockResolvedValue(new Map());
             vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue([chainIdBn]);
             vi.spyOn(l1MetricsService, "tvl").mockResolvedValue(mockZkTvl);
             vi.spyOn(l1MetricsService, "getBatchesInfo").mockResolvedValue(mockBatchesInfo);
             vi.spyOn(l1MetricsService, "feeParams").mockResolvedValue(mockFeeParams);
             vi.spyOn(l1MetricsService, "getBaseTokens").mockResolvedValue([nativeToken]);
             vi.spyOn(l1MetricsService, "chainType").mockResolvedValue(mockedChainType);
-            zkChainsMetadata.clear();
 
             const result = await service.getChain(chainId);
 
@@ -669,6 +681,7 @@ describe("MetricsController", () => {
 
         it("should throw ChainNotFound exception when chain ID is not found", async () => {
             const chainId = 999;
+            vi.spyOn(metadataProvider, "getChainsMetadata").mockResolvedValue(new Map());
             vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue([]);
 
             await expect(service.getChain(chainId)).rejects.toThrow(ChainNotFound);

@@ -1,49 +1,15 @@
 import dotenv from "dotenv";
-import { Address, isAddress } from "viem";
+import { Address } from "viem";
 import { mainnet, zksync } from "viem/chains";
-import { z } from "zod";
 
+import { MetadataConfig } from "@zkchainhub/metadata";
 import { Logger } from "@zkchainhub/shared";
+
+import { validationSchema } from "./schemas.js";
 
 dotenv.config();
 
 const logger = Logger.getInstance();
-
-const addressArraySchema = z
-    .string()
-    .transform((str) => str.split(","))
-    .refine((addresses) => addresses.every((address) => isAddress(address)), {
-        message: "Must be a comma-separated list of valid Addresses",
-    });
-const addressSchema = z.string().refine((address) => isAddress(address), {
-    message: "Must be a valid Address",
-});
-
-const urlArraySchema = z
-    .string()
-    .transform((str) => str.split(","))
-    .refine((urls) => urls.every((url) => z.string().url().safeParse(url).success), {
-        message: "Must be a comma-separated list of valid URLs",
-    });
-
-const validationSchema = z.object({
-    PORT: z.coerce.number().positive().default(3000),
-    BRIDGE_HUB_ADDRESS: addressSchema,
-    SHARED_BRIDGE_ADDRESS: addressSchema,
-    STATE_MANAGER_ADDRESSES: addressArraySchema,
-    L1_RPC_URLS: urlArraySchema,
-    L2_RPC_URLS: z
-        .union([z.literal(""), urlArraySchema])
-        .optional()
-        .transform((val) => {
-            if (val === undefined || val === "") return [];
-            return val;
-        }),
-    COINGECKO_API_KEY: z.string(),
-    COINGECKO_BASE_URL: z.string().url().default("https://api.coingecko.com/api/v3/"),
-    COINGECKO_API_TYPE: z.enum(["demo", "pro"]).default("demo"),
-    CACHE_TTL: z.coerce.number().positive().default(60),
-});
 
 const env = validationSchema.safeParse(process.env);
 
@@ -53,6 +19,27 @@ if (!env.success) {
 }
 
 const { data: envData } = env;
+
+const createMetadataConfig = (
+    env: typeof envData,
+): MetadataConfig<typeof envData.METADATA_SOURCE> => {
+    switch (env.METADATA_SOURCE) {
+        case "github":
+            return {
+                source: "github",
+                tokenUrl: env.METADATA_TOKEN_URL,
+                chainUrl: env.METADATA_CHAIN_URL,
+            };
+        case "local":
+            return {
+                source: "local",
+                tokenJsonPath: env.METADATA_TOKEN_JSON_PATH,
+                chainJsonPath: env.METADATA_CHAIN_JSON_PATH,
+            };
+        case "static":
+            return { source: "static" };
+    }
+};
 
 export const config = {
     port: envData.PORT,
@@ -80,6 +67,7 @@ export const config = {
             apiType: envData.COINGECKO_API_TYPE,
         },
     },
+    metadata: createMetadataConfig(envData),
 } as const;
 
 export type ConfigType = typeof config;

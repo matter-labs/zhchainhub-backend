@@ -79,6 +79,9 @@ importers:
             "@zkchainhub/chain-providers":
                 specifier: workspace:*
                 version: link:../../packages/chain-providers
+            "@zkchainhub/metadata":
+                specifier: workspace:*
+                version: link:../../packages/metadata
             "@zkchainhub/metrics":
                 specifier: workspace:*
                 version: link:../../packages/metrics
@@ -165,6 +168,9 @@ importers:
             "@zkchainhub/chain-providers":
                 specifier: workspace:*
                 version: link:../chain-providers
+            "@zkchainhub/metadata":
+                specifier: workspace:*
+                version: link:../metadata
             "@zkchainhub/pricing":
                 specifier: workspace:*
                 version: link:../pricing

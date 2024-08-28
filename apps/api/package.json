@@ -18,6 +18,7 @@
     },
     "dependencies": {
         "@zkchainhub/chain-providers": "workspace:*",
+        "@zkchainhub/metadata": "workspace:*",
         "@zkchainhub/metrics": "workspace:*",
         "@zkchainhub/pricing": "workspace:*",
         "@zkchainhub/shared": "workspace:*",

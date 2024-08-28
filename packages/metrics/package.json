@@ -19,6 +19,7 @@
         "@zkchainhub/shared": "workspace:*",
         "@zkchainhub/pricing": "workspace:*",
         "@zkchainhub/chain-providers": "workspace:*",
+        "@zkchainhub/metadata": "workspace:*",
         "viem": "2.19.6"
     }
 }

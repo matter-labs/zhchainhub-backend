@@ -1,31 +1,21 @@
 import assert from "assert";
 import { isNativeError } from "util/types";
-import {
-    Address,
-    encodeFunctionData,
-    erc20Abi,
-    formatUnits,
-    Hex,
-    parseEther,
-    parseUnits,
-    zeroAddress,
-} from "viem";
+import { Address, erc20Abi, formatUnits, Hex, parseUnits, zeroAddress } from "viem";
 
 import { EvmProvider } from "@zkchainhub/chain-providers";
-import { IPricingProvider } from "@zkchainhub/pricing";
+import { IMetadataProvider } from "@zkchainhub/metadata";
+import { IPricingProvider, PriceResponse } from "@zkchainhub/pricing";
 import {
     BatchesInfo,
     ChainId,
     Chains,
     ChainType,
-    erc20Tokens,
     ETH_TOKEN_ADDRESS,
     ILogger,
+    isErc20Token,
     isNativeToken,
-    nativeToken,
     Token,
-    tokens,
-    WETH,
+    TokenType,
 } from "@zkchainhub/shared";
 
 import {
@@ -43,8 +33,9 @@ import {
     stateTransitionManagerAbi,
 } from "../internal.js";
 
-const ONE_ETHER = parseEther("1");
 const FEE_PARAMS_SLOT: Hex = `0x26`;
+const ETH_TRANSFER_GAS_LIMIT = 21000n; //See: https://ethereum.org/en/developers/docs/gas/#what-is-gas-limit
+const ERC20_TRANSFER_GAS_LIMIT = 65000n; //See: https://etherscan.io/gastracker#chart_gasprice
 
 /**
  * Acts as a wrapper around Viem library to provide methods to interact with an EVM-based blockchain.
@@ -58,6 +49,7 @@ export class L1MetricsService {
         private readonly stateTransitionManagerAddresses: Address[],
         private readonly evmProviderService: EvmProvider,
         private readonly pricingService: IPricingProvider,
+        private readonly metadataProvider: IMetadataProvider,
         private readonly logger: ILogger,
     ) {}
 
@@ -66,33 +58,39 @@ export class L1MetricsService {
      * @returns A Promise that resolves to an array of AssetTvl objects representing the TVL for each asset.
      */
     async l1Tvl(): Promise<AssetTvl[]> {
-        const erc20Addresses = Object.values(erc20Tokens).map((token) => token.contractAddress);
+        const [nativeToken, erc20Tokens] = await this.getTokensMetadata();
+        const tokens = [nativeToken, ...erc20Tokens];
+
+        const erc20Addresses = erc20Tokens.map((token) => token.contractAddress);
 
         const balances = await this.fetchTokenBalances(erc20Addresses);
         const pricesRecord = await this.pricingService.getTokenPrices(
-            tokens.map((token) => token.coingeckoId),
+            tokens.map((token) => token.contractAddress || ETH_TOKEN_ADDRESS),
         );
 
         assert(Object.keys(pricesRecord).length === tokens.length, "Invalid prices length");
 
-        return this.calculateTvl(balances, erc20Addresses, pricesRecord);
+        return this.calculateTvl(tokens, balances, erc20Addresses, pricesRecord);
     }
 
     /**
      * Calculates the Total Value Locked (TVL) for each token based on the provided balances, addresses, and prices.
+     * @param tokens - The array of tokens for which to calculate the TVL.
      * @param balances - The balances object containing the ETH balance and an array of erc20 token addresses balance.
      * @param addresses - The array of erc20 addresses.
      * @param prices - The object containing the prices of tokens.
      * @returns An array of AssetTvl objects representing the TVL for each token in descending order.
      */
     private calculateTvl(
+        tokens: Token<TokenType>[],
         balances: { ethBalance: bigint; addressesBalance: bigint[] },
         addresses: Address[],
-        prices: Record<string, number>,
+        prices: PriceResponse,
     ): AssetTvl[] {
         const tvl: AssetTvl[] = [];
 
         for (const token of tokens) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { coingeckoId, ...tokenInfo } = token;
 
             const balance = isNativeToken(token)
@@ -103,17 +101,19 @@ export class L1MetricsService {
 
             assert(balance !== undefined, `Balance for ${tokenInfo.symbol} not found`);
 
-            const price = prices[coingeckoId] as number;
+            const price = prices[tokenInfo.contractAddress || ETH_TOKEN_ADDRESS];
             // math is done with bigints for better precision
-            const tvlValue = formatUnits(
-                balance * parseUnits(price.toString(), tokenInfo.decimals),
-                tokenInfo.decimals * 2,
-            );
+            const tvlValue = price
+                ? formatUnits(
+                      balance * parseUnits(price.toString(), tokenInfo.decimals),
+                      tokenInfo.decimals * 2,
+                  )
+                : undefined;
 
             const assetTvl: AssetTvl = {
                 amount: formatUnits(balance, tokenInfo.decimals),
                 amountUsd: tvlValue,
-                price: price.toString(),
+                price: price?.toString(),
                 ...tokenInfo,
             };
 
@@ -214,16 +214,19 @@ export class L1MetricsService {
      * @returns A Promise that resolves to an array of AssetTvl objects representing the TVL for each asset.
      */
     async tvl(chainId: ChainId): Promise<AssetTvl[]> {
-        const erc20Addresses = Object.values(erc20Tokens).map((token) => token.contractAddress);
+        const [nativeToken, erc20Tokens] = await this.getTokensMetadata();
+        const tokens = [nativeToken, ...erc20Tokens];
+
+        const erc20Addresses = erc20Tokens.map((token) => token.contractAddress);
 
         const balances = await this.fetchTokenBalancesByChain(chainId, erc20Addresses);
         const pricesRecord = await this.pricingService.getTokenPrices(
-            tokens.map((token) => token.coingeckoId),
+            tokens.map((token) => token.contractAddress || ETH_TOKEN_ADDRESS),
         );
 
         assert(Object.keys(pricesRecord).length === tokens.length, "Invalid prices length");
 
-        return this.calculateTvl(balances, erc20Addresses, pricesRecord);
+        return this.calculateTvl(tokens, balances, erc20Addresses, pricesRecord);
     }
 
     /**
@@ -233,25 +236,47 @@ export class L1MetricsService {
      * @returns A promise that resolves to an object containing the ETH balance and an array of address balances.
      */
     private async fetchTokenBalancesByChain(chainId: ChainId, addresses: Address[]) {
-        const balances = await this.evmProviderService.multicall({
-            contracts: [
-                ...addresses.map((tokenAddress) => {
-                    return {
+        const multicall3Address = this.evmProviderService.getMulticall3Address();
+        let balances: bigint[] = [];
+
+        if (multicall3Address) {
+            balances = await this.evmProviderService.multicall({
+                contracts: [
+                    ...addresses.map((tokenAddress) => {
+                        return {
+                            address: this.sharedBridgeAddress,
+                            abi: sharedBridgeAbi,
+                            functionName: "chainBalance",
+                            args: [chainId, tokenAddress],
+                        } as const;
+                    }),
+                    {
                         address: this.sharedBridgeAddress,
                         abi: sharedBridgeAbi,
                         functionName: "chainBalance",
-                        args: [chainId, tokenAddress],
-                    } as const;
-                }),
-                {
-                    address: this.sharedBridgeAddress,
-                    abi: sharedBridgeAbi,
-                    functionName: "chainBalance",
-                    args: [chainId, ETH_TOKEN_ADDRESS],
-                } as const,
-            ],
-            allowFailure: false,
-        });
+                        args: [chainId, ETH_TOKEN_ADDRESS],
+                    } as const,
+                ],
+                allowFailure: false,
+            });
+        } else {
+            balances = await Promise.all([
+                ...addresses.map((tokenAddress) =>
+                    this.evmProviderService.readContract(
+                        this.sharedBridgeAddress,
+                        sharedBridgeAbi,
+                        "chainBalance",
+                        [chainId, tokenAddress],
+                    ),
+                ),
+                this.evmProviderService.readContract(
+                    this.sharedBridgeAddress,
+                    sharedBridgeAbi,
+                    "chainBalance",
+                    [chainId, ETH_TOKEN_ADDRESS],
+                ),
+            ]);
+        }
 
         return { ethBalance: balances[addresses.length]!, addressesBalance: balances.slice(0, -1) };
     }
@@ -300,33 +325,16 @@ export class L1MetricsService {
      */
     async ethGasInfo(): Promise<GasInfo> {
         try {
-            const [ethTransferGasCost, erc20TransferGasCost, gasPrice] = await Promise.all([
-                // Estimate gas for an ETH transfer.
-                this.evmProviderService.estimateGas({
-                    account: zeroAddress,
-                    to: zeroAddress,
-                    value: ONE_ETHER,
-                }),
-                // Estimate gas for an ERC20 transfer.
-                this.evmProviderService.estimateGas({
-                    account: zeroAddress,
-                    to: WETH.contractAddress,
-                    data: encodeFunctionData({
-                        abi: erc20Abi,
-                        functionName: "transfer",
-                        args: [this.sharedBridgeAddress, ONE_ETHER],
-                    }),
-                }),
-                // Get the current gas price.
-                this.evmProviderService.getGasPrice(),
-            ]);
+            const gasPrice = await this.evmProviderService.getGasPrice();
             // Get the current price of ether.
             let ethPriceInUsd: number | undefined = undefined;
             try {
+                const [nativeToken] = await this.getTokensMetadata();
+
                 const priceResult = await this.pricingService.getTokenPrices([
-                    nativeToken.coingeckoId,
+                    nativeToken.contractAddress || ETH_TOKEN_ADDRESS,
                 ]);
-                ethPriceInUsd = priceResult[nativeToken.coingeckoId];
+                ethPriceInUsd = priceResult[nativeToken.contractAddress || ETH_TOKEN_ADDRESS];
             } catch (e) {
                 this.logger.error("Failed to get the price of ether.");
             }
@@ -334,8 +342,8 @@ export class L1MetricsService {
             return {
                 gasPrice,
                 ethPrice: ethPriceInUsd,
-                ethTransfer: ethTransferGasCost,
-                erc20Transfer: erc20TransferGasCost,
+                ethTransfer: ETH_TRANSFER_GAS_LIMIT,
+                erc20Transfer: ERC20_TRANSFER_GAS_LIMIT,
             };
         } catch (e: unknown) {
             if (isNativeError(e)) {
@@ -373,6 +381,8 @@ export class L1MetricsService {
      */
     async getBaseTokens(chainIds: ChainId[]): Promise<Token<"erc20" | "native">[]> {
         if (chainIds.length === 0) return [];
+        const [nativeToken, erc20Tokens] = await this.getTokensMetadata();
+
         const baseTokens = await this.evmProviderService.multicall({
             contracts: chainIds.map((chainId) => {
                 return {
@@ -386,8 +396,16 @@ export class L1MetricsService {
         });
         return baseTokens.map((baseToken) => {
             return baseToken === ETH_TOKEN_ADDRESS
-                ? nativeToken
-                : erc20Tokens[baseToken] || {
+                ? nativeToken || {
+                      contractAddress: baseToken,
+                      decimals: 18,
+                      name: "unknown",
+                      type: "native",
+                      symbol: "unknown",
+                      coingeckoId: "unknown",
+                  }
+                : //FIXME: have a map from address to token (which will be main use case)
+                  erc20Tokens.find((token) => token.contractAddress === baseToken) || {
                       contractAddress: baseToken,
                       decimals: 18,
                       name: "unknown",
@@ -447,5 +465,21 @@ export class L1MetricsService {
             priorityTxMaxPubdata: parseInt(priorityTxMaxPubdata, 16),
             minimalL2GasPrice: BigInt(`0x${minimalL2GasPrice}`),
         };
+    }
+
+    private async getTokensMetadata(): Promise<[Token<"native">, Token<"erc20">[]]> {
+        const tokens = await this.metadataProvider.getTokensMetadata();
+
+        const nativeTokens = tokens.find((token) => isNativeToken(token)) || {
+            contractAddress: null,
+            decimals: 18,
+            name: "unknown",
+            type: "native",
+            symbol: "unknown",
+            coingeckoId: "unknown",
+        };
+        const erc20Tokens = tokens.filter((token) => isErc20Token(token));
+
+        return [nativeTokens, erc20Tokens] as [Token<"native">, Token<"erc20">[]];
     }
 }

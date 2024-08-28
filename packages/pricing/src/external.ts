@@ -1,4 +1,4 @@
-export type { IPricingProvider } from "./internal.js";
+export type { IPricingProvider, PriceResponse } from "./internal.js";
 
 export { RateLimitExceeded, ApiNotAvailable } from "./internal.js";
 

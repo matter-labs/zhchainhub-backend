@@ -32,6 +32,57 @@ describe("GithubMetadataProvider", () => {
         vi.resetAllMocks();
     });
 
+    describe("constructor", () => {
+        it("create a new instance of GithubMetadataProvider", () => {
+            const tokenJsonUrl = "https://github.com/token.json";
+            const chainJsonUrl = "https://github.com/chain.json";
+
+            const provider = new GithubMetadataProvider(
+                tokenJsonUrl,
+                chainJsonUrl,
+                mockLogger,
+                mockCache,
+            );
+
+            expect(provider).toBeInstanceOf(GithubMetadataProvider);
+            expect(provider["tokenJsonUrl"]).toBe(tokenJsonUrl);
+            expect(provider["chainJsonUrl"]).toBe(chainJsonUrl);
+        });
+
+        it("throw an InvalidSchema error if the tokenJsonUrl is invalid", () => {
+            const tokenJsonUrl = "invalid-url";
+            const chainJsonUrl = "https://example.com/chain.json";
+            const logger = {} as ILogger;
+            const cache = {} as Cache;
+
+            expect(
+                () => new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, logger, cache),
+            ).toThrow(InvalidSchema);
+        });
+
+        it("throw an InvalidSchema error if the chainJsonUrl is invalid", () => {
+            const tokenJsonUrl = "https://example.com/token.json";
+            const chainJsonUrl = "";
+            const logger = {} as ILogger;
+            const cache = {} as Cache;
+
+            expect(
+                () => new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl, logger, cache),
+            ).toThrow(InvalidSchema);
+        });
+
+        it("throw an InvalidSchema error if the chainJsonUrl is undefined", () => {
+            const tokenJsonUrl = "https://example.com/token.json";
+            const chainJsonUrl = undefined;
+            const logger = {} as ILogger;
+            const cache = {} as Cache;
+
+            expect(
+                () => new GithubMetadataProvider(tokenJsonUrl, chainJsonUrl as any, logger, cache),
+            ).toThrow(InvalidSchema);
+        });
+    });
+
     describe("getChainsMetadata", () => {
         it("return the cached chains metadata", async () => {
             const cachedData = new Map<bigint, ZKChainMetadataItem>([

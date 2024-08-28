@@ -21,12 +21,30 @@ export const GITHUB_METADATA_PREFIX = "github-metadata";
  */
 export class GithubMetadataProvider implements IMetadataProvider {
     private readonly axios: AxiosInstance;
+
+    /**
+     * Creates a new instance of the GithubMetadataProvider.
+     *
+     * @param tokenJsonUrl The URL to fetch the token metadata from.
+     * @param chainJsonUrl The URL to fetch the chain metadata from.
+     * @param logger The logger to use.
+     * @param cache The cache to use.
+     * @throws InvalidSchema if the tokenJsonUrl or chainJsonUrl is invalid.
+     */
     constructor(
         private readonly tokenJsonUrl: string,
         private readonly chainJsonUrl: string,
         private readonly logger: ILogger,
         private readonly cache: Cache,
     ) {
+        if (!z.string().url().safeParse(tokenJsonUrl).success) {
+            throw new InvalidSchema(`Invalid tokenJsonUrl: ${tokenJsonUrl}`);
+        }
+
+        if (!z.string().url().safeParse(chainJsonUrl).success) {
+            throw new InvalidSchema(`Invalid chainJsonUrl: ${chainJsonUrl}`);
+        }
+
         this.axios = axios.create({
             headers: {
                 Accept: "application/json",

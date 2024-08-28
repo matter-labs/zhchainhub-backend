@@ -1,10 +1,10 @@
 import { isNativeError } from "util/types";
 import axios, { AxiosInstance, isAxiosError } from "axios";
 
-import { BASE_CURRENCY, Cache, ILogger } from "@zkchainhub/shared";
+import { Address, BASE_CURRENCY, Cache, ILogger } from "@zkchainhub/shared";
 
-import type { IPricingProvider, TokenPrices } from "../internal.js";
-import { ApiNotAvailable, RateLimitExceeded } from "../internal.js";
+import type { IPricingProvider, PriceResponse, TokenPrices } from "../internal.js";
+import { addressToId, ApiNotAvailable, idToAddress, RateLimitExceeded } from "../internal.js";
 
 export const AUTH_HEADER = (type: "demo" | "pro") =>
     type === "demo" ? "x-cg-demo-api-key" : "x-cg-pro-api-key";
@@ -56,24 +56,34 @@ export class CoingeckoProvider implements IPricingProvider {
      * @param tokenIds - An array of Coingecko Tokens IDs.
      * @returns A promise that resolves to a record of token prices in USD.
      */
-    async getTokenPrices(tokenIds: string[]): Promise<Record<string, number>> {
-        const cachedTokenPrices = await this.getTokenPricesFromCache(tokenIds);
-        const missingTokenIds: string[] = [];
-        const cachedMap = cachedTokenPrices.reduce(
-            (result, price, index) => {
-                if (price) result[tokenIds.at(index) as string] = price;
-                else missingTokenIds.push(tokenIds.at(index) as string);
-
-                return result;
-            },
-            {} as Record<string, number>,
+    async getTokenPrices(addresses: Address[]): Promise<PriceResponse> {
+        const baseMap: PriceResponse = Object.fromEntries(
+            addresses.map((address) => [address, undefined]),
         );
 
+        const knownTokens = addresses.filter((address) => addressToId[address]);
+        const tokenIds = knownTokens.map((address) => addressToId[address]) as string[];
+
+        const cachedTokenPrices = await this.getTokenPricesFromCache(tokenIds);
+        const missingTokenIds: string[] = [];
+
+        cachedTokenPrices.forEach((price, index) => {
+            if (price) {
+                const address = idToAddress[tokenIds.at(index) as string] as Address;
+                baseMap[address] = price;
+            } else missingTokenIds.push(tokenIds.at(index) as string);
+        });
+
         const missingTokenPrices = await this.fetchTokenPrices(missingTokenIds);
+        Object.entries(missingTokenPrices).forEach((entry) => {
+            const [tokenId, price] = entry;
+            const address = idToAddress[tokenId] as Address;
+            baseMap[address] = price;
+        });
 
         await this.saveTokenPricesToCache(missingTokenPrices);
 
-        return { ...cachedMap, ...missingTokenPrices };
+        return baseMap;
     }
 
     /**

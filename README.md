@@ -85,6 +85,16 @@ $ pnpm run test:e2e
 $ pnpm run test:cov
 ```
 
+# Deployment
+
+## Docker
+
+To build a Docker image for the API, navigate to the root directory of the monorepo and run the following command:
+
+```
+docker build . --target api --tag api:latest
+```
+
 ## Docs
 
 Locally Swagger docs are available at http://localhost:3000/docs

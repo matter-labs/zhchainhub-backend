@@ -5,7 +5,6 @@ import { Address } from "@zkchainhub/shared";
 export const TokenSchema = z.object({
     name: z.string(),
     symbol: z.string(),
-    coingeckoId: z.string(), // FIXME: on pricing refactor, this should not be part of the token metadata
     type: z.union([z.literal("erc20"), z.literal("native")]),
     contractAddress: z
         .custom<Address>((val) => {

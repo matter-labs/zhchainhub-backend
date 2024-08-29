@@ -7,7 +7,6 @@ export const mockTokenData: Token<TokenType>[] = [
         name: "Ethereum",
         symbol: "ETH",
         contractAddress: null,
-        coingeckoId: "ethereum",
         type: "native",
         imageUrl:
             "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
@@ -17,7 +16,6 @@ export const mockTokenData: Token<TokenType>[] = [
         name: "Wrapped Ether",
         symbol: "WETH",
         contractAddress: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-        coingeckoId: "weth",
         imageUrl: "https://coin-images.coingecko.com/coins/images/2518/large/weth.png?1696503332",
         type: "erc20",
         decimals: 18,
@@ -40,7 +38,6 @@ export const mockChainData = [
             name: "Ethereum",
             symbol: "ETH",
             contractAddress: null,
-            coingeckoId: "ethereum",
             type: "native",
             imageUrl:
                 "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
@@ -57,7 +54,6 @@ export const mockChainData = [
             symbol: "zkCRO",
             name: "zkCRO",
             contractAddress: "0x28Ff2E4dD1B58efEB0fC138602A28D5aE81e44e2",
-            coingeckoId: "unknown",
             type: "erc20",
             imageUrl: "https://zkevm.cronos.org/images/chains/zkevm.svg",
             decimals: 18,

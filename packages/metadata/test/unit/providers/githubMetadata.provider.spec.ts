@@ -103,7 +103,6 @@ describe("GithubMetadataProvider", () => {
                         baseToken: {
                             name: "Ethereum",
                             symbol: "ETH",
-                            coingeckoId: "ethereum",
                             type: "native",
                             contractAddress: null,
                             decimals: 18,
@@ -146,7 +145,6 @@ describe("GithubMetadataProvider", () => {
                 baseToken: {
                     name: "Ethereum",
                     symbol: "ETH",
-                    coingeckoId: "ethereum",
                     type: "native",
                     contractAddress: null,
                     decimals: 18,
@@ -194,7 +192,6 @@ describe("GithubMetadataProvider", () => {
                 baseToken: {
                     name: "Ethereum",
                     symbol: "ETH",
-                    coingeckoId: "ethereum",
                     type: "native",
                     contractAddress: null,
                     decimals: 18,
@@ -215,7 +212,6 @@ describe("GithubMetadataProvider", () => {
                 baseToken: {
                     name: "zkCRO",
                     symbol: "zkCRO",
-                    coingeckoId: "unknown",
                     type: "erc20",
                     contractAddress: "0x28Ff2E4dD1B58efEB0fC138602A28D5aE81e44e2",
                     decimals: 18,

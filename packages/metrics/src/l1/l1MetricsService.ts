@@ -90,34 +90,31 @@ export class L1MetricsService {
         const tvl: AssetTvl[] = [];
 
         for (const token of tokens) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { coingeckoId, ...tokenInfo } = token;
-
             const balance = isNativeToken(token)
                 ? balances.ethBalance
-                : balances.addressesBalance[
-                      addresses.indexOf(tokenInfo.contractAddress as Address)
-                  ];
+                : balances.addressesBalance[addresses.indexOf(token.contractAddress as Address)];
 
-            assert(balance !== undefined, `Balance for ${tokenInfo.symbol} not found`);
+            assert(balance !== undefined, `Balance for ${token.symbol} not found`);
 
-            const price = prices[tokenInfo.contractAddress || ETH_TOKEN_ADDRESS];
-            // math is done with bigints for better precision
-            const tvlValue = price
-                ? formatUnits(
-                      balance * parseUnits(price.toString(), tokenInfo.decimals),
-                      tokenInfo.decimals * 2,
-                  )
-                : undefined;
+            if (balance > 0n) {
+                const price = prices[token.contractAddress || ETH_TOKEN_ADDRESS];
+                // math is done with bigints for better precision
+                const tvlValue = price
+                    ? formatUnits(
+                          balance * parseUnits(price.toString(), token.decimals),
+                          token.decimals * 2,
+                      )
+                    : undefined;
 
-            const assetTvl: AssetTvl = {
-                amount: formatUnits(balance, tokenInfo.decimals),
-                amountUsd: tvlValue,
-                price: price?.toString(),
-                ...tokenInfo,
-            };
+                const assetTvl: AssetTvl = {
+                    amount: formatUnits(balance, token.decimals),
+                    amountUsd: tvlValue,
+                    price: price?.toString(),
+                    ...token,
+                };
 
-            tvl.push(assetTvl);
+                tvl.push(assetTvl);
+            }
         }
 
         // we assume the rounding error is negligible for sorting purposes
@@ -402,7 +399,6 @@ export class L1MetricsService {
                       name: "unknown",
                       type: "native",
                       symbol: "unknown",
-                      coingeckoId: "unknown",
                   }
                 : //FIXME: have a map from address to token (which will be main use case)
                   erc20Tokens.find((token) => token.contractAddress === baseToken) || {
@@ -411,7 +407,6 @@ export class L1MetricsService {
                       name: "unknown",
                       type: "erc20",
                       symbol: "unknown",
-                      coingeckoId: "unknown",
                   };
         });
     }

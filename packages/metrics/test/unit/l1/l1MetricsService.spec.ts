@@ -10,7 +10,6 @@ import {
     ChainType,
     ETH_TOKEN_ADDRESS,
     ILogger,
-    nativeToken,
     Token,
     TokenType,
 } from "@zkchainhub/shared";
@@ -32,7 +31,6 @@ const mockTokens: Token<TokenType>[] = [
         name: "Ethereum",
         symbol: "ETH",
         contractAddress: null,
-        coingeckoId: "ethereum",
         type: "native",
         imageUrl:
             "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
@@ -42,7 +40,6 @@ const mockTokens: Token<TokenType>[] = [
         name: "USDC",
         symbol: "USDC",
         contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-        coingeckoId: "usd-coin",
         imageUrl: "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
         type: "erc20",
         decimals: 6,
@@ -51,7 +48,6 @@ const mockTokens: Token<TokenType>[] = [
         name: "Wrapped BTC",
         symbol: "WBTC",
         contractAddress: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-        coingeckoId: "wrapped-bitcoin",
         imageUrl:
             "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
         type: "erc20",
@@ -61,7 +57,6 @@ const mockTokens: Token<TokenType>[] = [
         name: "Unknown token",
         symbol: "XYZ",
         contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
-        coingeckoId: "",
         type: "erc20",
         decimals: 18,
     },
@@ -176,7 +171,7 @@ describe("l1Metrics", () => {
 
             const result = await l1Metrics.l1Tvl();
 
-            expect(result).toHaveLength(4);
+            expect(result).toHaveLength(3);
             expect(result).toEqual([
                 {
                     amount: "123803.824374847279970609",
@@ -213,16 +208,6 @@ describe("l1Metrics", () => {
                         "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
                     type: "erc20",
                     decimals: 8,
-                },
-                {
-                    amount: "0",
-                    amountUsd: undefined,
-                    price: undefined,
-                    name: "Unknown token",
-                    symbol: "XYZ",
-                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
-                    type: "erc20",
-                    decimals: 18,
                 },
             ]);
             expect(evmProvider.multicall).toHaveBeenCalledWith({
@@ -290,7 +275,7 @@ describe("l1Metrics", () => {
 
             const result = await l1Metrics.l1Tvl();
 
-            expect(result).toHaveLength(4);
+            expect(result).toHaveLength(3);
             expect(result).toEqual([
                 {
                     amount: "123803.824374847279970609",
@@ -327,16 +312,6 @@ describe("l1Metrics", () => {
                         "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
                     type: "erc20",
                     decimals: 8,
-                },
-                {
-                    amount: "0",
-                    amountUsd: undefined,
-                    price: undefined,
-                    name: "Unknown token",
-                    symbol: "XYZ",
-                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
-                    type: "erc20",
-                    decimals: 18,
                 },
             ]);
             expect(evmProvider.multicall).not.toHaveBeenCalled();
@@ -601,7 +576,7 @@ describe("l1Metrics", () => {
 
             const result = await l1Metrics.tvl(chainId);
 
-            expect(result).toHaveLength(4);
+            expect(result).toHaveLength(3);
             expect(result).toEqual([
                 {
                     amount: "123803.824374847279970609",
@@ -638,16 +613,6 @@ describe("l1Metrics", () => {
                         "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
                     type: "erc20",
                     decimals: 8,
-                },
-                {
-                    amount: "0",
-                    amountUsd: undefined,
-                    price: undefined,
-                    name: "Unknown token",
-                    symbol: "XYZ",
-                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
-                    type: "erc20",
-                    decimals: 18,
                 },
             ]);
             expect(evmProvider.multicall).toHaveBeenCalledWith({
@@ -714,7 +679,7 @@ describe("l1Metrics", () => {
 
             const result = await l1Metrics.tvl(chainId);
 
-            expect(result).toHaveLength(4);
+            expect(result).toHaveLength(3);
             expect(result).toEqual([
                 {
                     amount: "123803.824374847279970609",
@@ -751,16 +716,6 @@ describe("l1Metrics", () => {
                         "https://coin-images.coingecko.com/coins/images/7598/large/wrapped_bitcoin_wbtc.png?1696507857",
                     type: "erc20",
                     decimals: 8,
-                },
-                {
-                    amount: "0",
-                    amountUsd: undefined,
-                    price: undefined,
-                    name: "Unknown token",
-                    symbol: "XYZ",
-                    contractAddress: "0x2260fAc5E5542a2a5aa44fBcfeDF7C193bc2c599",
-                    type: "erc20",
-                    decimals: 18,
                 },
             ]);
             expect(evmProvider.multicall).not.toHaveBeenCalled();
@@ -968,7 +923,7 @@ describe("l1Metrics", () => {
             mockGetGasPrice.mockRejectedValueOnce(new Error("Failed to get gas price"));
 
             const mockGetTokenPrices = vi.spyOn(pricingService, "getTokenPrices");
-            mockGetTokenPrices.mockResolvedValueOnce({ [nativeToken.coingeckoId]: 2000 }); // ethPriceInUsd
+            mockGetTokenPrices.mockResolvedValueOnce({ [ETH_TOKEN_ADDRESS]: 2000 }); // ethPriceInUsd
 
             // Call the method and expect it to throw l1MetricsException
             await expect(l1Metrics.ethGasInfo()).rejects.toThrow(L1MetricsServiceException);
@@ -1078,7 +1033,6 @@ describe("l1Metrics", () => {
                     name: "unknown",
                     decimals: 18,
                     type: "erc20",
-                    coingeckoId: "unknown",
                 },
                 {
                     contractAddress: "0x1234567890123456789012345678901234567345",
@@ -1086,7 +1040,6 @@ describe("l1Metrics", () => {
                     name: "unknown",
                     decimals: 18,
                     type: "erc20",
-                    coingeckoId: "unknown",
                 },
             ];
 
@@ -1115,7 +1068,6 @@ describe("l1Metrics", () => {
                     name: "unknown",
                     decimals: 18,
                     type: "erc20",
-                    coingeckoId: "unknown",
                 },
                 {
                     contractAddress: "0x1234567890123456789012345678901234567345",
@@ -1123,7 +1075,6 @@ describe("l1Metrics", () => {
                     name: "unknown",
                     decimals: 18,
                     type: "erc20",
-                    coingeckoId: "unknown",
                 },
             ];
 

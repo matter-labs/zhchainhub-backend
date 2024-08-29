@@ -1,5 +1,4 @@
 import { ZKChainMetadata } from "../internal.js";
-import { nativeToken } from "./index.js";
 
 export const zkChainsMetadata: ZKChainMetadata = new Map([
     [
@@ -16,7 +15,15 @@ export const zkChainsMetadata: ZKChainMetadata = new Map([
             explorerUrl: "https://explorer.zksync.io/",
             launchDate: 1679626800,
             chainType: "Rollup",
-            baseToken: nativeToken,
+            baseToken: {
+                name: "Ether",
+                symbol: "ETH",
+                contractAddress: null,
+                type: "native",
+                imageUrl:
+                    "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+                decimals: 18,
+            },
         },
     ],
     [
@@ -25,14 +32,13 @@ export const zkChainsMetadata: ZKChainMetadata = new Map([
             chainId: 388n,
             name: "Cronos",
             iconUrl: "https://zkevm.cronos.org/images/chains/zkevm.svg",
-            chainType: "Rollup",
+            chainType: "Validium",
             publicRpcs: ["https://mainnet.zkevm.cronos.org"],
             explorerUrl: "https://explorer.zkevm.cronos.org/",
             baseToken: {
                 symbol: "zkCRO",
                 name: "zkCRO",
                 contractAddress: "0x28Ff2E4dD1B58efEB0fC138602A28D5aE81e44e2",
-                coingeckoId: "unknown",
                 type: "erc20",
                 imageUrl: "https://zkevm.cronos.org/images/chains/zkevm.svg",
                 decimals: 18,

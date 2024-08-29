@@ -102,7 +102,11 @@ export class GithubMetadataProvider implements IMetadataProvider {
             const validatedData = z.array(TokenSchema).safeParse(data);
 
             if (!validatedData.success) {
-                this.logger.error(`Invalid Token metadata: ${validatedData.error.errors}`);
+                this.logger.error(
+                    `Invalid Tokens metadata: ${validatedData.error.errors
+                        .map((e) => `${e.path.join(".")}: ${e.message}`)
+                        .join(", ")}`,
+                );
                 throw new InvalidSchema("Invalid Token metadata");
             }
 

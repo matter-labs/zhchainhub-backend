@@ -82,7 +82,11 @@ export class LocalFileMetadataProvider implements IMetadataProvider {
         const validatedData = z.array(TokenSchema).safeParse(parsed);
 
         if (!validatedData.success) {
-            this.logger.error(`Invalid Tokens metadata: ${validatedData.error.errors}`);
+            this.logger.error(
+                `Invalid Tokens metadata: ${validatedData.error.errors
+                    .map((e) => `${e.path.join(".")}: ${e.message}`)
+                    .join(", ")}`,
+            );
             throw new InvalidSchema("Invalid Tokens metadata");
         }
 

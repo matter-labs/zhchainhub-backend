@@ -4,7 +4,7 @@ import { caching } from "cache-manager";
 import { EvmProvider } from "@zkchainhub/chain-providers";
 import { MetadataProviderFactory } from "@zkchainhub/metadata";
 import { L1MetricsService } from "@zkchainhub/metrics";
-import { CoingeckoProvider } from "@zkchainhub/pricing";
+import { PricingProviderFactory } from "@zkchainhub/pricing";
 import { Logger } from "@zkchainhub/shared";
 
 import { App } from "./app.js";
@@ -20,15 +20,11 @@ const main = async (): Promise<void> => {
     });
 
     const evmProvider = new EvmProvider(config.l1.rpcUrls, config.l1.chain, logger);
-    const pricingProvider = new CoingeckoProvider(
-        {
-            apiBaseUrl: config.pricing.pricingOptions.apiBaseUrl,
-            apiKey: config.pricing.pricingOptions.apiKey,
-            apiType: config.pricing.pricingOptions.apiType,
-        },
-        memoryCache,
+
+    const pricingProvider = PricingProviderFactory.create(config.pricing, {
+        cache: memoryCache,
         logger,
-    );
+    });
 
     const metadataProvider = MetadataProviderFactory.create(config.metadata, {
         logger,

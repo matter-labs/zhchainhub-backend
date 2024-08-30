@@ -1,8 +1,9 @@
 import dotenv from "dotenv";
 import { Address } from "viem";
-import { mainnet, zksync } from "viem/chains";
+import { localhost, mainnet, sepolia } from "viem/chains";
 
 import { MetadataConfig } from "@zkchainhub/metadata";
+import { PricingConfig } from "@zkchainhub/pricing";
 import { Logger } from "@zkchainhub/shared";
 
 import { validationSchema } from "./schemas.js";
@@ -41,19 +42,42 @@ const createMetadataConfig = (
     }
 };
 
+const createPricingConfig = (env: typeof envData): PricingConfig<typeof env.PRICING_SOURCE> => {
+    switch (env.PRICING_SOURCE) {
+        case "dummy":
+            return {
+                source: "dummy",
+                dummyPrice: env.DUMMY_PRICE,
+            };
+        case "coingecko":
+            return {
+                source: "coingecko",
+                apiKey: env.COINGECKO_API_KEY,
+                apiBaseUrl: env.COINGECKO_BASE_URL,
+                apiType: env.COINGECKO_API_TYPE,
+            };
+    }
+};
+
+const getChain = (environment: "mainnet" | "testnet" | "local") => {
+    switch (environment) {
+        case "mainnet":
+            return mainnet;
+        case "testnet":
+            return sepolia;
+        case "local":
+            return localhost;
+    }
+};
+
 export const config = {
     port: envData.PORT,
+    environment: envData.ENVIRONMENT,
+
     l1: {
         rpcUrls: envData.L1_RPC_URLS,
-        chain: mainnet,
+        chain: getChain(envData.ENVIRONMENT),
     },
-    l2:
-        envData.L2_RPC_URLS.length > 0
-            ? {
-                  rpcUrls: envData.L2_RPC_URLS,
-                  chain: zksync,
-              }
-            : undefined,
     bridgeHubAddress: envData.BRIDGE_HUB_ADDRESS as Address,
     sharedBridgeAddress: envData.SHARED_BRIDGE_ADDRESS as Address,
     stateTransitionManagerAddresses: envData.STATE_MANAGER_ADDRESSES as Address[],
@@ -61,11 +85,7 @@ export const config = {
         cacheOptions: {
             ttl: envData.CACHE_TTL,
         },
-        pricingOptions: {
-            apiKey: envData.COINGECKO_API_KEY,
-            apiBaseUrl: envData.COINGECKO_BASE_URL,
-            apiType: envData.COINGECKO_API_TYPE,
-        },
+        ...createPricingConfig(envData),
     },
     metadata: createMetadataConfig(envData),
 } as const;

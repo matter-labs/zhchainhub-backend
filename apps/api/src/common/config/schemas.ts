@@ -23,15 +23,11 @@ const baseSchema = z.object({
     BRIDGE_HUB_ADDRESS: addressSchema,
     SHARED_BRIDGE_ADDRESS: addressSchema,
     STATE_MANAGER_ADDRESSES: addressArraySchema,
+    ENVIRONMENT: z.enum(["mainnet", "testnet", "local"]).default("mainnet"),
     L1_RPC_URLS: urlArraySchema,
-    L2_RPC_URLS: z
-        .union([z.literal(""), urlArraySchema])
-        .optional()
-        .transform((val) => {
-            if (val === undefined || val === "") return [];
-            return val;
-        }),
-    COINGECKO_API_KEY: z.string(),
+    PRICING_SOURCE: z.enum(["dummy", "coingecko"]).default("dummy"),
+    DUMMY_PRICE: z.coerce.number().optional(),
+    COINGECKO_API_KEY: z.string().optional(),
     COINGECKO_BASE_URL: z.string().url().default("https://api.coingecko.com/api/v3/"),
     COINGECKO_API_TYPE: z.enum(["demo", "pro"]).default("demo"),
     CACHE_TTL: z.coerce.number().positive().default(60),
@@ -75,8 +71,28 @@ const staticSchema = baseSchema
         METADATA_CHAIN_JSON_PATH: true,
     });
 
-export const validationSchema = z.discriminatedUnion("METADATA_SOURCE", [
-    githubSchema,
-    localSchema,
-    staticSchema,
-]);
+const dummyPricingSchema = baseSchema
+    .extend({
+        PRICING_SOURCE: z.literal("dummy"),
+        DUMMY_PRICE: z.coerce.number().optional(),
+    })
+    .omit({
+        COINGECKO_API_KEY: true,
+        COINGECKO_BASE_URL: true,
+        COINGECKO_API_TYPE: true,
+    });
+
+const coingeckoPricingSchema = baseSchema
+    .extend({
+        PRICING_SOURCE: z.literal("coingecko"),
+        COINGECKO_API_KEY: z.string(),
+        COINGECKO_BASE_URL: z.string().url().default("https://api.coingecko.com/api/v3/"),
+        COINGECKO_API_TYPE: z.enum(["demo", "pro"]).default("demo"),
+    })
+    .omit({
+        DUMMY_PRICE: true,
+    });
+
+export const validationSchema = z
+    .discriminatedUnion("METADATA_SOURCE", [githubSchema, localSchema, staticSchema])
+    .and(z.discriminatedUnion("PRICING_SOURCE", [dummyPricingSchema, coingeckoPricingSchema]));

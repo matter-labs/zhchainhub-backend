@@ -3,7 +3,7 @@ import { Address } from "@zkchainhub/shared";
 import { PriceResponse } from "../internal.js";
 
 // providers
-export type PricingProvider = "coingecko";
+export type PricingProvider = "coingecko" | "dummy";
 
 /**
  * Represents a pricing service that retrieves token prices.

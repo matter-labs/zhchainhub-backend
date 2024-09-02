@@ -12,6 +12,7 @@ This repository is a monorepo consisting of 4 packages and 1 app:
 -   [`@zkchainhub/shared`](./packages/shared): A library for shared configurations, constants, types, etc.
 -   [`@zkchainhub/chain-providers`](./packages/chain-providers): A library that provides abstracted services over Viem providers to query blockchain data
 -   [`@zkchainhub/pricing`](./packages/pricing): An extensible library that provides Pricing services to fetch token prices. Currently, only Coingecko provider is developed
+-   [`@zkchainhub/metadata`](./packages/metadata): A library that exposes different providers for fetching chains and tokens metadata.
 -   [`@zkchainhub/metrics`](./packages/metrics): A library that provides different aggregated metrics from the ZKsync ecosystem and ZK chains.
 -   [`@zkchainhub/api`](./apps/api): An Express server that exposes an API where you can fetch information about ZKsync ecosystem and their chains, using the before mentioned libraries
 
@@ -48,16 +49,7 @@ $ pnpm build
 
 ## ⚙️ Setting up env variables
 
--   Inside `apps/api` folder, create `.env` file and copy paste `.env.example` content in there.
-
-```
-$ cd apps/api && cp .env.example .env
-```
-
--   Set up `L1_RPC_URLS` as CSV list of RPC URLs. For example, `https://eth.llamarpc.com,https://rpc.flashbots.net/fast`. You can check [Chainlist](https://chainlist.org/) for a list of public RPCs
--   Set up `L2_RPC_URLS` as CSV list of RPC URLs. For example, `https://mainnet.era.zksync.io`. You can check [Chainlist](https://chainlist.org/) for a list of public RPCs
--   Set `COINGECKO_API_KEY`, `COINGECKO_BASE_URL` and `COINGECKO_API_KEY` depending on your API plan. You can get an API Key creating an account on [Coingecko's site](https://www.coingecko.com/en/api)
--   (Optionally) Set `PORT` on which API is made available. By default is port 3000
+-   Follow the instructions for `apps/api` on [API's README](./apps/api/README.md)
 
 ## Running the app
 
@@ -116,3 +108,7 @@ ZKchainHub was built with ❤️ by [Wonderland](https://defi.sucks).
 Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
 
 [DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.
+
+## License
+
+This project is licensed under the MIT License. See the [`LICENSE`](./LICENSE) file for details.

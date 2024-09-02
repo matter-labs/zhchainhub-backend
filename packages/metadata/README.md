@@ -87,6 +87,43 @@ $ pnpm run test
 $ pnpm run test:cov
 ```
 
+## Usage
+
+### Importing the Package
+
+You can import the package in your TypeScript or JavaScript files as follows:
+
+```typescript
+import { MetadataProviderFactory } from "@zkchainhub/metadata";
+```
+
+### Example
+
+You can manually instantiate any of the available providers or use the factory
+
+```typescript
+// manual
+const metadataProvider = new LocalFileMetadataProvider(tokenJson, chainsJson, logger);
+
+// factory
+const metadataFromFactory = MetadataProviderFactory.create(providerOptions, additionalDependencies);
+
+const chainsMap = await metadataProvider.getChainsMetadata();
+const tokensArray = await metadataProvider.getTokensMetadata();
+```
+
+## API
+
+### IMetadataProvider
+
+#### `getChainsMetadata(): Promise<ZKChainMetadata>`
+
+Retrieves the metadata for ZK chains of the ecosystem
+
+#### `getTokensMetadata(): Promise<Token<TokenType>[]>`
+
+Retrieves metadata for tokens of the ecosystem
+
 ## Contributing
 
 To create a new provider, create it inside [`providers`](./src/providers/) folder and implement the [`IMetadataProvider`](./src/interfaces/metadata.interface.ts) interface.

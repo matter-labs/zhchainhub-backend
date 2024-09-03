@@ -24,19 +24,19 @@ describe("ZKChainProvider", () => {
     });
 
     it("has a zkclient property defined", () => {
-        zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
+        zkProvider = new ZKChainProvider(defaultRpcUrls, mockLogger, defaultMockChain);
         expect(zkProvider["zkClient"]).toBeDefined();
     });
 
     it("throws RpcUrlsEmpty error if rpcUrls is empty", () => {
         expect(() => {
-            new ZKChainProvider([], localhost, mockLogger);
+            new ZKChainProvider([], mockLogger, localhost);
         }).toThrowError(RpcUrlsEmpty);
     });
 
     describe("avgBlockTime", () => {
         it("should return the average block time over the given range", async () => {
-            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, mockLogger, defaultMockChain);
             const currentBlockNumber = 1000;
             const range = 100;
             const currentBlockTimestamp = { timestamp: BigInt(123234345) };
@@ -64,7 +64,7 @@ describe("ZKChainProvider", () => {
         });
 
         it("should throw an InvalidArgumentException if the range is less than 1", async () => {
-            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, mockLogger, defaultMockChain);
             await expect(zkProvider.avgBlockTime(0)).rejects.toThrowError(
                 new InvalidArgumentException("range for avgBlockTime should be >= 1"),
             );
@@ -73,7 +73,7 @@ describe("ZKChainProvider", () => {
 
     describe("tps", () => {
         it("should return the transactions per second (TPS)", async () => {
-            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, mockLogger, defaultMockChain);
             const currentBatchNumber = 1000; // 1000 in hexadecimal
             const currentBatchDetails = { l2TxCount: 200, timestamp: 123234345 };
             const prevBatchDetails = { timestamp: 123123123 };
@@ -99,7 +99,7 @@ describe("ZKChainProvider", () => {
         });
 
         it("should handle the case when there are no transactions", async () => {
-            zkProvider = new ZKChainProvider(defaultRpcUrls, defaultMockChain, mockLogger);
+            zkProvider = new ZKChainProvider(defaultRpcUrls, mockLogger, defaultMockChain);
             const currentBatchNumber = 1000; // 1000 in hexadecimal
             const currentBatchDetails = { l2TxCount: 0, timestamp: 123234345 };
             const prevBatchDetails = { timestamp: 123123123 };
@@ -122,6 +122,23 @@ describe("ZKChainProvider", () => {
             expect(zkProvider.getL1BatchNumber).toHaveBeenCalled();
             expect(zkProvider.getL1BatchDetails).toHaveBeenCalledWith(1000);
             expect(zkProvider.getL1BatchDetails).toHaveBeenCalledWith(999);
+        });
+    });
+
+    describe("getL1BatchBlockRange", () => {
+        it("should return the block range for the specified L1 batch number", async () => {
+            zkProvider = new ZKChainProvider(defaultRpcUrls, mockLogger, defaultMockChain);
+            const l1BatchNumber = 1000;
+            const blockRange: [number, number] = [5000, 6000];
+
+            vi.spyOn(zkProvider["zkClient"], "getL1BatchBlockRange").mockResolvedValue(blockRange);
+
+            const result = await zkProvider.getL1BatchBlockRange(l1BatchNumber);
+
+            expect(result).toEqual(blockRange);
+            expect(zkProvider["zkClient"].getL1BatchBlockRange).toHaveBeenCalledWith({
+                l1BatchNumber,
+            });
         });
     });
 });

@@ -39,12 +39,12 @@ import {
  */
 export class EvmProvider {
     private client: ReturnType<
-        typeof createPublicClient<FallbackTransport<HttpTransport[]>, Chain>
+        typeof createPublicClient<FallbackTransport<HttpTransport[]>, Chain | undefined>
     >;
 
     constructor(
         rpcUrls: string[],
-        readonly chain: Chain,
+        readonly chain: Chain | undefined,
         private readonly logger: ILogger,
     ) {
         if (rpcUrls.length === 0) {
@@ -62,7 +62,7 @@ export class EvmProvider {
      * @returns {Address | undefined} The address of the Multicall3 contract, or undefined if not found.
      */
     getMulticall3Address(): Address | undefined {
-        return this.chain.contracts?.multicall3?.address;
+        return this.chain?.contracts?.multicall3?.address;
     }
 
     /**
@@ -201,7 +201,7 @@ export class EvmProvider {
     >(
         args: MulticallParameters<contracts, allowFailure>,
     ): Promise<MulticallReturnType<contracts, allowFailure>> {
-        if (!this.chain.contracts?.multicall3?.address) throw new MulticallNotFound();
+        if (!this.chain?.contracts?.multicall3?.address) throw new MulticallNotFound();
 
         return this.client.multicall<contracts, allowFailure>(args);
     }

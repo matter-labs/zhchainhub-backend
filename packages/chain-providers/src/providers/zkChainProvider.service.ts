@@ -7,7 +7,12 @@ import {
     http,
     HttpTransport,
 } from "viem";
-import { GetL1BatchDetailsReturnType, PublicActionsL2, publicActionsL2 } from "viem/zksync";
+import {
+    GetL1BatchBlockRangeReturnParameters,
+    GetL1BatchDetailsReturnType,
+    PublicActionsL2,
+    publicActionsL2,
+} from "viem/zksync";
 
 import { ILogger } from "@zkchainhub/shared";
 
@@ -20,13 +25,13 @@ import { EvmProvider } from "./evmProvider.service.js";
 export class ZKChainProvider extends EvmProvider {
     private zkClient: Client<
         FallbackTransport<HttpTransport[]>,
-        Chain,
+        Chain | undefined,
         undefined,
         undefined,
         PublicActionsL2
     >;
 
-    constructor(rpcUrls: string[], chain: Chain, logger: ILogger) {
+    constructor(rpcUrls: string[], logger: ILogger, chain: Chain | undefined = undefined) {
         super(rpcUrls, chain, logger);
         this.zkClient = createClient({
             chain,
@@ -49,6 +54,18 @@ export class ZKChainProvider extends EvmProvider {
      */
     async getL1BatchNumber(): Promise<number> {
         return parseInt((await this.zkClient.getL1BatchNumber()).toString(), 16);
+    }
+
+    /**
+     * Retrieves the block range for a given L1 batch number.
+     *
+     * @param l1BatchNumber - The L1 batch number.
+     * @returns A promise that resolves to the block range for the specified L1 batch number.
+     */
+    async getL1BatchBlockRange(
+        l1BatchNumber: number,
+    ): Promise<GetL1BatchBlockRangeReturnParameters> {
+        return this.zkClient.getL1BatchBlockRange({ l1BatchNumber });
     }
 
     /**

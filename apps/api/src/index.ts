@@ -1,11 +1,11 @@
 import { inspect } from "util";
 import { caching } from "cache-manager";
 
-import { EvmProvider } from "@zkchainhub/chain-providers";
+import { EvmProvider, ZKChainProvider } from "@zkchainhub/chain-providers";
 import { MetadataProviderFactory } from "@zkchainhub/metadata";
-import { L1MetricsService } from "@zkchainhub/metrics";
+import { L1MetricsService, L2MetricsService } from "@zkchainhub/metrics";
 import { PricingProviderFactory } from "@zkchainhub/pricing";
-import { Logger } from "@zkchainhub/shared";
+import { ChainId, Logger } from "@zkchainhub/shared";
 
 import { App } from "./app.js";
 import { config } from "./common/config/index.js";
@@ -40,7 +40,22 @@ const main = async (): Promise<void> => {
         metadataProvider,
         logger,
     );
-    const metricsController = new MetricsController(l1MetricsService, metadataProvider, logger);
+
+    const l2ChainsConfigMap = config.l2;
+    const l2MetricsMap = new Map<ChainId, L2MetricsService>();
+
+    for (const [chainId, rpcUrls] of Object.entries(l2ChainsConfigMap)) {
+        const provider = new ZKChainProvider(rpcUrls, logger);
+        const metricsService = new L2MetricsService(provider, logger);
+        l2MetricsMap.set(BigInt(chainId), metricsService);
+    }
+
+    const metricsController = new MetricsController(
+        l1MetricsService,
+        l2MetricsMap,
+        metadataProvider,
+        logger,
+    );
     const metricsRouter = new MetricsRouter(metricsController, logger);
 
     const app = new App(config, [metricsRouter], logger);

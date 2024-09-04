@@ -1,6 +1,15 @@
 import { isAddress } from "viem";
 import { z } from "zod";
 
+const stringToJSONSchema = z.string().transform((str, ctx): z.infer<ReturnType<typeof Object>> => {
+    try {
+        return JSON.parse(str);
+    } catch (e) {
+        ctx.addIssue({ code: "custom", message: "Invalid JSON" });
+        return z.NEVER;
+    }
+});
+
 const addressArraySchema = z
     .string()
     .transform((str) => str.split(","))
@@ -11,12 +20,12 @@ const addressSchema = z.string().refine((address) => isAddress(address), {
     message: "Must be a valid Address",
 });
 
-const urlArraySchema = z
-    .string()
-    .transform((str) => str.split(","))
-    .refine((urls) => urls.every((url) => z.string().url().safeParse(url).success), {
-        message: "Must be a comma-separated list of valid URLs",
-    });
+const urlArraySchema = z.array(z.string().url());
+
+const urlArrayMapSchema = z.record(
+    z.union([z.coerce.number().int(), z.string().regex(/^\d+$/)]), // key: number or string number
+    urlArraySchema,
+);
 
 const baseSchema = z.object({
     PORT: z.coerce.number().positive().default(3000),
@@ -24,7 +33,8 @@ const baseSchema = z.object({
     SHARED_BRIDGE_ADDRESS: addressSchema,
     STATE_MANAGER_ADDRESSES: addressArraySchema,
     ENVIRONMENT: z.enum(["mainnet", "testnet", "local"]).default("mainnet"),
-    L1_RPC_URLS: urlArraySchema,
+    L1_RPC_URLS: stringToJSONSchema.pipe(urlArraySchema),
+    L2_RPC_URLS_MAP: stringToJSONSchema.pipe(urlArrayMapSchema).default("{}"),
     PRICING_SOURCE: z.enum(["dummy", "coingecko"]).default("dummy"),
     DUMMY_PRICE: z.coerce.number().optional(),
     COINGECKO_API_KEY: z.string().optional(),

@@ -2,7 +2,7 @@ import BigNumber from "bignumber.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { IMetadataProvider } from "@zkchainhub/metadata";
-import { AssetTvl, GasInfo, L1MetricsService } from "@zkchainhub/metrics";
+import { AssetTvl, GasInfo, L1MetricsService, L2MetricsService } from "@zkchainhub/metrics";
 import {
     ChainId,
     ChainType,
@@ -31,6 +31,7 @@ const mockLogger: ILogger = {
 describe("MetricsController", () => {
     let service: MetricsController;
     let l1MetricsService: L1MetricsService;
+    let l2MetricsMap: Map<ChainId, L2MetricsService>;
     let metadataProvider: IMetadataProvider;
 
     afterEach(() => {
@@ -52,7 +53,13 @@ describe("MetricsController", () => {
             getChainsMetadata: vi.fn(),
             getTokensMetadata: vi.fn(),
         };
-        service = new MetricsController(l1MetricsService, metadataProvider, mockLogger);
+        l2MetricsMap = new Map<ChainId, L2MetricsService>();
+        service = new MetricsController(
+            l1MetricsService,
+            l2MetricsMap,
+            metadataProvider,
+            mockLogger,
+        );
     });
 
     it("should be defined", () => {
@@ -84,7 +91,6 @@ describe("MetricsController", () => {
                     symbol: "zkCRO",
                     name: "zkCRO",
                     contractAddress: "0x28Ff2E4dD1B58efEB0fC138602A28D5aE81e44e2",
-                    coingeckoId: "unknown",
                     type: "erc20",
                     imageUrl: "https://zkevm.cronos.org/images/chains/zkevm.svg",
                     decimals: 18,
@@ -259,7 +265,6 @@ describe("MetricsController", () => {
                     symbol: "zkCRO",
                     name: "zkCRO",
                     contractAddress: "0x28Ff2E4dD1B58efEB0fC138602A28D5aE81e44e2",
-                    coingeckoId: "unknown",
                     type: "erc20",
                     imageUrl: "https://zkevm.cronos.org/images/chains/zkevm.svg",
                     decimals: 18,
@@ -677,6 +682,126 @@ describe("MetricsController", () => {
                     baseToken: nativeToken,
                 }),
             );
+        });
+
+        it("returns the chain information with L2 Metrics for the specified chain ID", async () => {
+            const l2MetricsService = {
+                tps: vi.fn(),
+                avgBlockTime: vi.fn(),
+                lastBlock: vi.fn(),
+                getLastVerifiedBlock: vi.fn(),
+            } as unknown as L2MetricsService;
+            l2MetricsMap.set(324n, l2MetricsService);
+
+            const chainId = 324;
+            const chainIdBn = BigInt(chainId);
+            const mockZkTvl: AssetTvl[] = [
+                {
+                    amount: "118306.55998740125385395",
+                    amountUsd: "300833115.01308356813367811665",
+                    price: "2542.827",
+                    name: "Ethereum",
+                    symbol: "ETH",
+                    contractAddress: null,
+                    type: "native",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628",
+                    decimals: 18,
+                },
+                {
+                    amount: "56310048.030096",
+                    amountUsd: "56366358.078126096",
+                    price: "1.001",
+                    name: "USDC",
+                    symbol: "USDC",
+                    contractAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/6319/large/usdc.png?1696506694",
+                    type: "erc20",
+                    decimals: 6,
+                },
+                {
+                    amount: "998459864.823799773445941598",
+                    amountUsd: "11981518.377885597281351299176",
+                    price: "0.012",
+                    name: "Koi",
+                    symbol: "KOI",
+                    contractAddress: "0x9D14BcE1dADdf408d77295BB1be9b343814f44DE",
+                    imageUrl:
+                        "https://coin-images.coingecko.com/coins/images/35766/large/Koi_logo.png?1709782399",
+                    type: "erc20",
+                    decimals: 18,
+                },
+            ];
+            const mockBatchesInfo = { commited: 1n, verified: 1n, executed: 1n };
+            const mockFeeParams = {
+                pubdataPricingMode: 1,
+                batchOverheadL1Gas: 50000,
+                maxL2GasPerBatch: 100000,
+                maxPubdataPerBatch: 8000,
+                minimalL2GasPrice: 2000000000n,
+                priorityTxMaxPubdata: 1000,
+            };
+            const zkChainsMetadata = new Map<bigint, ZKChainMetadataItem>();
+            zkChainsMetadata.set(chainIdBn, {
+                chainId: 324n,
+                chainType: "Rollup",
+                baseToken: nativeToken,
+                iconUrl: "https://s2.coinmarketcap.com/static/img/coins/64x64/24091.png",
+                name: "ZKsyncERA",
+                publicRpcs: [
+                    "https://mainnet.era.zksync.io",
+                    "https://zksync.drpc.org",
+                    "https://zksync.meowrpc.com",
+                ],
+                explorerUrl: "https://explorer.zksync.io/",
+                launchDate: 1679626800,
+            });
+
+            vi.spyOn(metadataProvider, "getChainsMetadata").mockResolvedValue(zkChainsMetadata);
+            vi.spyOn(l1MetricsService, "getChainIds").mockResolvedValue([chainIdBn]);
+            vi.spyOn(l1MetricsService, "tvl").mockResolvedValue(mockZkTvl);
+            vi.spyOn(l1MetricsService, "getBatchesInfo").mockResolvedValue(mockBatchesInfo);
+            vi.spyOn(l1MetricsService, "feeParams").mockResolvedValue(mockFeeParams);
+            vi.spyOn(l1MetricsService, "getBaseTokens").mockResolvedValue([nativeToken]);
+            vi.spyOn(l2MetricsService, "tps").mockResolvedValue(1.5);
+            vi.spyOn(l2MetricsService, "avgBlockTime").mockResolvedValue(10.5);
+            vi.spyOn(l2MetricsService, "lastBlock").mockResolvedValue(5000n);
+            vi.spyOn(l2MetricsService, "getLastVerifiedBlock").mockResolvedValue(4950);
+
+            const result = await service.getChain(chainId);
+
+            expect(result).toEqual(
+                new ZKChainInfo({
+                    batchesInfo: {
+                        commited: mockBatchesInfo.commited.toString(),
+                        verified: mockBatchesInfo.verified.toString(),
+                        executed: mockBatchesInfo.executed.toString(),
+                    },
+                    tvl: mockZkTvl,
+                    feeParams: {
+                        batchOverheadL1Gas: mockFeeParams.batchOverheadL1Gas,
+                        maxL2GasPerBatch: mockFeeParams.maxL2GasPerBatch,
+                        maxPubdataPerBatch: mockFeeParams.maxPubdataPerBatch,
+                        minimalL2GasPrice: mockFeeParams.minimalL2GasPrice.toString(),
+                        priorityTxMaxPubdata: mockFeeParams.priorityTxMaxPubdata,
+                    },
+                    chainType: zkChainsMetadata.get(chainIdBn)?.chainType as ChainType,
+                    baseToken: zkChainsMetadata.get(chainIdBn)?.baseToken as Token<
+                        "erc20" | "native"
+                    >,
+                    metadata: new ZkChainMetadata(
+                        zkChainsMetadata.get(chainIdBn) as ZkChainMetadata,
+                    ),
+                    l2ChainInfo: {
+                        tps: 1.5,
+                        avgBlockTime: 10.5,
+                        lastBlock: "5000",
+                        lastBlockVerified: 4950,
+                    },
+                }),
+            );
+            expect(l2MetricsService.getLastVerifiedBlock).toHaveBeenCalledWith(1);
         });
 
         it("should throw ChainNotFound exception when chain ID is not found", async () => {

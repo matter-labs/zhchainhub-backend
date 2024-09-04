@@ -7,28 +7,28 @@ export class L2ChainInfo {
      * @type {number}
      * @memberof L2ChainInfo
      */
-    tps: number;
+    tps?: number;
 
     /**
      * Average block time in seconds.
      * @type {number}
      * @memberof L2ChainInfo
      */
-    avgBlockTime: number;
+    avgBlockTime?: number;
 
     /**
      * The number of the last block.
-     * @type {number}
+     * @type {string}
      * @memberof L2ChainInfo
      */
-    lastBlock: number;
+    lastBlock?: string;
 
     /**
      * The number of the last verified block.
      * @type {number}
      * @memberof L2ChainInfo
      */
-    lastBlockVerified: number;
+    lastBlockVerified?: number;
 
     constructor(data: L2ChainInfo) {
         this.tps = data.tps;

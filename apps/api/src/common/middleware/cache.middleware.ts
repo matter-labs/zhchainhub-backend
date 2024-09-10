@@ -22,10 +22,11 @@ export function cacheMiddleware(args: { ttl: number } = { ttl: DEFAULT_TTL }) {
             // Store the original send and json functions
             const originalJson = res.json.bind(res);
             // Override the json function
-
             res.json = (body): Response => {
-                // Cache the response body
-                cache.set(key, body, args.ttl);
+                if (!("errors" in body)) {
+                    // Cache the response body if it is not an error response
+                    cache.set(key, body, args.ttl);
+                }
                 // Call the original json function with the response body
                 return originalJson(body);
             };

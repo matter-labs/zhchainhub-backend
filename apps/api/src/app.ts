@@ -5,6 +5,7 @@ import { ILogger } from "@zkchainhub/shared";
 
 import { listRoutes, setupOpenApiConfiguration as setupOpenApi } from "./api-docs/index.js";
 import { ConfigType } from "./common/config/index.js";
+import { generalErrorHandler } from "./common/middleware/generalError.middleware.js";
 import { requestLogger } from "./common/middleware/requestLogger.middleware.js";
 import { zodErrorHandler } from "./common/middleware/zodError.middleware.js";
 import { BaseRouter } from "./common/routes/baseRouter.js";
@@ -64,5 +65,6 @@ export class App {
 
     private initializeErrorHandling(): void {
         this.app.use(zodErrorHandler);
+        this.app.use(generalErrorHandler);
     }
 }

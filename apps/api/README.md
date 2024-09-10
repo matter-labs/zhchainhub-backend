@@ -38,8 +38,8 @@ Available options:
 | `BRIDGE_HUB_ADDRESS` | Bridge Hub address | N/A | Yes | |
 | `SHARED_BRIDGE_ADDRESS` | Shared Bridge address | N/A | Yes | |
 | `STATE_MANAGER_ADDRESSES` | CSV list of State manager addresses | N/A | Yes | |
-| `L1_RPC_URLS` | JSON array of RPC URLs. For example, ["https://eth.llamarpc.com","https://rpc.flashbots.net/fast"] | N/A | Yes | You can check [Chainlist](https://chainlist.org/) for a list of public RPCs |
-| `L2_RPC_URLS_MAP` | JSON from chain id to CSV list of L2 RPC URLs. For example, {"324":"https://mainnet.era.zksync.io,https://zksync.drpc.org"} | N/A | No | You can check [Chainlist](https://chainlist.org/) for a list of public RPCs |
+| `L1_RPC_URLS` | JSON array of RPC URLs. For example, `["https://eth.llamarpc.com","https://rpc.flashbots.net/fast"]` | N/A | Yes | You can check [Chainlist](https://chainlist.org/) for a list of public RPCs |
+| `L2_RPC_URLS_MAP` | JSON from chain id to CSV list of L2 RPC URLs. For example, `{"324":"https://mainnet.era.zksync.io,https://zksync.drpc.org"}` | N/A | No | You can check [Chainlist](https://chainlist.org/) for a list of public RPCs |
 | `PRICING_SOURCE` | Pricing source to use (`'dummy'`, `'coingecko'`) | 'dummy' | No | |
 | `DUMMY_PRICE` | Price for dummy pricing source | undefined | No | Only applicable if `PRICING_SOURCE` is `'dummy'` |
 | `COINGECKO_API_KEY` | API key for CoinGecko | N/A | If `'coingecko'` is selected | You can get an API key by creating an account on [CoinGecko's site](https://www.coingecko.com/en/api) |

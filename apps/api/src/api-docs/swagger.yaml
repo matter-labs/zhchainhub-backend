@@ -4,8 +4,8 @@ info:
     description: Documentation for ZKchainHub API
     version: 1.0
 servers:
-    - url: http://localhost:3000
-      description: Local server
+    - url: /
+      description: Server
 
 tags:
     - name: Metrics

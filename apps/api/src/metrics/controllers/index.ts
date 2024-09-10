@@ -32,13 +32,14 @@ export class MetricsController {
                     }, new BigNumber(0))
                     .toString();
                 const chainIdStr = chainId.toString();
+                const hasRpc = this.l2MetricsMap.has(chainId);
                 if (!metadata) {
                     return {
                         chainId: chainIdStr,
                         chainType: await this.l1MetricsService.chainType(chainId),
                         baseToken: (await this.l1MetricsService.getBaseTokens([chainId]))[0],
                         tvl,
-                        rpc: false,
+                        rpc: hasRpc,
                     };
                 }
                 return {
@@ -47,7 +48,7 @@ export class MetricsController {
                     baseToken: metadata.baseToken,
                     tvl,
                     metadata: new ZkChainMetadata(metadata),
-                    rpc: false,
+                    rpc: hasRpc,
                 };
             }),
         );

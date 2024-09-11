@@ -200,6 +200,10 @@ components:
                     type: string
                     example: "https://explorer.example.com"
                     description: The URL of the chain's explorer.
+                websiteUrl:
+                    type: string
+                    example: "https://example.com"
+                    description: The URL of the chain's website.
                 launchDate:
                     type: number
                     example: 1638307200

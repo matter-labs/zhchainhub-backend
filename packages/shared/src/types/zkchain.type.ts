@@ -8,6 +8,7 @@ export type ZKChainMetadataItem = {
     baseToken: Token<"erc20" | "native">;
     publicRpcs: string[];
     explorerUrl?: string;
+    websiteUrl?: string;
     launchDate: number;
 };
 

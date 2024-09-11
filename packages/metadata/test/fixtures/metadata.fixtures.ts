@@ -32,6 +32,7 @@ export const mockChainData = [
             "https://zksync.meowrpc.com",
         ],
         explorerUrl: "https://explorer.zksync.io/",
+        websiteUrl: "https://zksync.io/",
         launchDate: 1679626800,
         chainType: "Rollup",
         baseToken: {

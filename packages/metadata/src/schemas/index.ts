@@ -21,6 +21,7 @@ export const ChainSchema = z.object({
     iconUrl: z.string().url().optional(),
     publicRpcs: z.array(z.string().url()).default([]),
     explorerUrl: z.string().url().optional(),
+    websiteUrl: z.string().url().optional(),
     launchDate: z.number().positive(),
     chainType: z.union([z.literal("Rollup"), z.literal("Validium")]),
     baseToken: TokenSchema,

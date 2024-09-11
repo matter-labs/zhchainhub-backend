@@ -10,24 +10,25 @@ This file contains an array of Chain metadata. To add a new one, follow the foll
 
 ```json
 {
-    "chainId": 324, //mandatory
-    "name": "ZKsyncERA", //mandatory
-    "iconUrl": "https://s2.coinmarketcap.com/static/img/coins/64x64/24091.png", //optional
+    "chainId": 324, // mandatory
+    "name": "ZKsyncERA", // mandatory
+    "iconUrl": "https://s2.coinmarketcap.com/static/img/coins/64x64/24091.png", // optional
     "publicRpcs": [
         "https://mainnet.era.zksync.io",
         "https://zksync.drpc.org",
         "https://zksync.meowrpc.com"
-    ], //optional,
-    "explorerUrl": "https://explorer.zksync.io/", //optional
-    "launchDate": 1679626800, //mandatory
+    ], // optional,
+    "explorerUrl": "https://explorer.zksync.io/", // optional
+    "websiteUrl": "https://zksync.io/", // optional
+    "launchDate": 1679626800, // mandatory
     "chainType": "Rollup", // "Rollup" | "Validium"
     "baseToken": {
-        "name": "Ether", //mandatory
-        "symbol": "ETH", //mandatory
+        "name": "Ether", // mandatory
+        "symbol": "ETH", // mandatory
         "type": "native", // "native" | "erc20"
         "contractAddress": null, // null if "native", address if "erc20"
-        "imageUrl": "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628", //optional
-        "decimals": 18 //mandatory
+        "imageUrl": "https://coin-images.coingecko.com/coins/images/279/large/ethereum.png?1696501628", // optional
+        "decimals": 18 // mandatory
     }
 }
 ```
@@ -57,7 +58,7 @@ Inside [examples](./examples/) folder, you'll find json examples. Copy it to you
 
 At [ZKchainHub-metadata repository](https://github.com/defi-wonderland/ZKchainHub-metadata) you'll find the latest curated list of tokens. To use it, remember to copy file url as raw content.
 
-> https://raw.githubusercontent.com/defi-wonderland/ZKchainHub-metadata/79779a6313ab43af055f59861be012bf67bb908d/chains_mainnet.json
+> https://raw.githubusercontent.com/defi-wonderland/ZKchainHub-metadata/main/chains_mainnet.json
 
 ## 📋 Prerequisites
 

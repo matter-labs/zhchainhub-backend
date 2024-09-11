@@ -31,6 +31,13 @@ export class ZkChainMetadata {
     explorerUrl?: string;
 
     /**
+     * The URL of the chain's website.
+     * @type {string}
+     * @memberof Metadata
+     */
+    websiteUrl?: string;
+
+    /**
      * The launch date of the chain (timestamp).
      * @type {number}
      * @memberof Metadata
@@ -42,6 +49,7 @@ export class ZkChainMetadata {
         this.name = data.name;
         this.publicRpcs = data.publicRpcs;
         this.explorerUrl = data.explorerUrl;
+        this.websiteUrl = data.websiteUrl;
         this.launchDate = data.launchDate;
     }
 }

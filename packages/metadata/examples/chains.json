@@ -9,6 +9,7 @@
             "https://zksync.meowrpc.com"
         ],
         "explorerUrl": "https://explorer.zksync.io/",
+        "websiteUrl": "https://zksync.io/",
         "launchDate": 1679626800,
         "chainType": "Rollup",
         "baseToken": {
@@ -27,6 +28,7 @@
         "chainType": "Validium",
         "publicRpcs": ["https://mainnet.zkevm.cronos.org"],
         "explorerUrl": "https://explorer.zkevm.cronos.org/",
+        "websiteUrl": "https://cronos.org/zkevm",
         "baseToken": {
             "symbol": "zkCRO",
             "name": "zkCRO",
